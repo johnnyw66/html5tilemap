@@ -1,0 +1,152 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if not Path then
+
+Path 			=	{}
+Path.className	=	"Path"
+local tmpV		=	Vector4.Create()
+Path.debug		=	true
+
+function Path.Create(primitive)
+
+	local path = {
+		primitive	=	primitive,
+		type		=	'unknown',
+		animation	=	nil,
+		className 	= 	Path.className,
+	}
+
+	setmetatable(path,{ __index = Path })
+	Path._Init(path,primitive)
+	return path
+end
+
+function Path._Init(path,primitive)
+
+	path.type		=	primitive.type
+	
+	local nodes		=	primitive.nodes 
+	local ptype		=	primitive.type 
+	local closed	=	primitive.closed
+	local lastV		=	nil
+	path.closed		=	closed
+
+	local totalLen 	=	0
+
+	local sections = {}
+	
+	for nodeIndex,node in pairs(nodes) do
+
+		local v = Vector4.Create(node.x,node.y)
+		
+		if (lastV) then
+			tmpV:Subtract(v,lastV)
+			local len = Vector4.Length3(tmpV)
+			totalLen = totalLen + len
+			
+			local dV = Vector4.Create(tmpV)
+			dV:Normalise3()
+			table.insert(sections,{pathVector = dV, length = len, position = lastV, accumlen = totalLen})
+		end
+
+		lastV   = v
+		
+	end
+	
+	if (closed) then
+		local lv = nodes[#nodes]
+		local fv = nodes[1]
+		local position = Vector4.Create(lv.x,lv.y)
+		tmpV:Subtract(Vector4.Create(fv.x,fv.y),position)
+		local len = Vector4.Length3(tmpV)
+		totalLen = totalLen + len
+		
+		local dV = Vector4.Create(tmpV)
+		dV:Normalise3()
+		table.insert(sections,{pathVector = dV, length = len, position = position, accumlen = totalLen})
+		
+	end
+	
+	path.sections 		=	sections 
+	path.totalLength	=	totalLen
+	
+end
+
+function Path.IsClosed(path)
+	return path.closed
+end
+
+function Path.GetTotalLength(path)
+	return path.totalLength
+end
+
+
+function Path.Debug(path)
+
+
+	local sections	=	path.sections 
+	local tLen		=	path.totalLength
+	local isCls		=	path.closed and 'closed' or 'not closed'
+	print("Path.Debug",isCls," total Len",tLen,"Number of Sections = ",#sections)
+	
+	for secIdx,section in pairs(sections) do
+		print("Section ",secIdx," Direction Vector ",section.pathVector:toString()," length = ",section.length, " Position Vector ",section.position:toString())
+	end
+end
+
+
+-- tValue from 0 to 1
+
+function Path.CalcPosition(path,vector,tValue,fromEnd)
+
+	local rtValue			=	fromEnd and (1-tValue) or tValue
+	local lengthTravelled	=	rtValue*path.totalLength
+	local sections			=	path.sections 
+	
+	for secIdx,section in pairs(sections) do
+		if lengthTravelled <= section.accumlen  then
+			-- found section, now calculate how far 'in' we are on that section (0 = @start 1 = @end)
+			local lt = 1 - (section.accumlen - lengthTravelled)/section.length
+				
+			-- new position =  section:position + lt*section:pathVector
+			vector:Multiply(section.pathVector,lt*section.length)
+			vector:Add(vector,section.position)
+			return 
+		end
+	end
+	
+end
+
+-- Calculate Path tValue from DAME segmentID and DAME t value
+
+function Path.FindPathTValue(path,segmentID,tValue)
+	assert(path.className == Path.className,'Path object Mismatch '..path.className)
+
+	local sections			=	path.sections 
+	local section			=	sections[segmentID + 1]		-- segmentID is 0 based
+	local lenTravelled 		=	section.accumlen + (tValue-1)*section.length
+	return lenTravelled/path.totalLength
+end
+
+function Path._RenderDebug(path,rHelper)
+
+	local sections = path.sections
+	
+	for secIdx,section in pairs(sections) do
+		local pv	=	section.pathVector
+		local plen	=	section.length
+		tmpV:Multiply(section.pathVector,section.length)
+		tmpV:Add(tmpV,section.position)
+		RenderHelper.DrawLine(rHelper,section.position:X(),section.position:Y(),tmpV:X(),tmpV:Y(),{0,255,0,120})
+	end
+end
+
+
+function Path.Render(path,rHelper)
+
+	if (Path.debug) then
+		Path._RenderDebug(path,rHelper)
+	end
+	
+end
+
+end

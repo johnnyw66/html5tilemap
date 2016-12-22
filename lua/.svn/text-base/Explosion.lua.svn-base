@@ -1,0 +1,183 @@
+-- @header
+if (not Explosion) then
+local 	MAXEXPLOSIONS	=	20
+Explosion				=	{}
+Explosion.className		=	"Explosion"
+
+Explosion.STATE_MOVE	=	0
+Explosion.STATE_DEAD	=	1
+
+	function Explosion.Create(info,anim,spr)
+		--Logger.lprint("Explosion.Create")
+		
+		local explode = {
+				x 			=	info.x,
+				y			=	info.y,
+				z			=	info.z or 0,
+				scale		=	info.scale or 1,
+				fps			=	info.fps or 13,
+				frameshor	=	info.frameshor or 8,
+				framesvert	=	info.framesvert or 1,
+				texture		=	info.texture or "explosionuv",
+				time		=	0,
+				anim		=	anim,
+				sprite 		= 	spr or Sprite.Create(),
+				className	=	Explosion.className,
+		}
+		setmetatable(explode, { __index = Explosion }) 
+		Explosion.Init(explode)
+		return explode 
+
+	end
+	
+	function Explosion.GetState(explode)
+	   	return explode.state
+	end
+
+
+	
+	function Explosion.Init(explode)
+
+		if (not explode.anim) then
+			explode.anim,explode.sprite	=	RenderHelper.CreateTextureAnimation(explode.frameshor,explode.framesvert,explode.texture,explode.fps)
+		end
+		TextureAnim.Play(explode.anim,false)
+		
+	end
+
+	
+	function Explosion.Update(explode,dt)
+		explode.time	=	explode.time	+ dt
+		explode.anim:Update(dt)
+		
+	end
+	
+	
+	function Explosion.RenderOLD(explode,renderHelper)
+		local uvs =	explode.anim:GetRenderTexture().uvs
+		local textureid =	explode.anim:GetRenderTexture().textureid
+		Sprite.SetTexture(explode.sprite,RenderHelper.TextureFind(textureid))
+		Sprite.SetUvs(explode.sprite,
+			uvs.tlu,uvs.tlv,
+			uvs.blu,uvs.blv,
+			uvs.bru,uvs.brv,
+			uvs.tru,uvs.trv
+		)
+		RenderHelper.DrawSprite(renderHelper,explode.sprite,explode.x,explode.y,1,0)
+	end
+
+	function Explosion.Render(explode,renderHelper)
+		local uvs =	explode.anim:GetRenderTexture().uvs
+		Sprite.SetUvs(explode.sprite,
+			uvs.tlu,uvs.tlv,
+			uvs.blu,uvs.blv,
+			uvs.bru,uvs.brv,
+			uvs.tru,uvs.trv
+		)
+		
+		RenderHelper.DrawSprite(renderHelper,explode.sprite,explode.x,explode.y,explode.scale,0)
+	end
+
+ExplosionManager 			=	{}
+ExplosionManager.className	=	"ExplosionManager"
+ExplosionManager.explosions	=	{}
+ExplosionManager.time		=	0
+ExplosionManager.DEBUG		=	true
+ExplosionManager.callback	=	function(event)
+									assert(false,'WHAT HAPPEN TO OUR ExplosionManager Hook?')
+								end
+								
+
+	local function causeEvent(eventName)
+
+		if (ExplosionManager.callback) then
+			ExplosionManager.callback(eventName)
+		end
+		
+	end
+	
+
+	function ExplosionManager.Terminate()
+		ExplosionManager.numexplosions			=	0
+		ExplosionManager.explosions 			=	{}
+		ExplosionManager.time					=	0
+		causeEvent("Terminate")
+	end
+
+	function ExplosionManager.Init(player,callback)
+	
+		ExplosionManager.explosions 			=	{}
+		ExplosionManager.time					=	0
+		ExplosionManager.callback				=	callback
+		ExplosionManager.numexplosions			=	0
+		
+	end
+	
+	function ExplosionManager.GetNumberOfExplosions()
+		return ExplosionManager.numexplosions
+	end
+	
+
+	function ExplosionManager.GetInfo()
+		return ExplosionManager.GetNumberOfExplosions()
+	end
+
+
+	function ExplosionManager.Update(dt)
+
+		ExplosionManager.time	=	ExplosionManager.time + dt
+		local finished = {}
+		
+		for idx,explode in pairs(ExplosionManager.explosions) do
+			if (TextureAnim.IsPlaying(explode.anim)) then
+				Explosion.Update(explode,dt)
+			else
+				table.insert(finished,{explosion = explode, index = idx})
+				ExplosionManager.explosions[idx] = nil
+				ExplosionManager.numexplosions	=	ExplosionManager.numexplosions - 1
+				causeEvent("EndExplosion")
+			end
+		end
+		for idx,explodeentry in pairs(finished) do
+--			ExplosionManager.RemoveExplosion(explodeentry)
+		end
+		
+	end
+
+
+	function ExplosionManager.RemoveExplosion(explodeentry)
+		if (ExplosionManager.explosions[explodeentry.index] and ExplosionManager.explosions[explodeentry.index]  == explodeentry.explosion) then
+			ExplosionManager.explosions[explodeentry.index] = nil
+		else
+			assert(false,'ExplodeManager.RemoveExplosion: - SEE A CODE DOCTOR')
+		end
+		ExplosionManager.numexplosions	=	ExplosionManager.numexplosions - 1
+		causeEvent("EndExplosion")
+		
+	end
+	
+	
+	function ExplosionManager.AddExplosion(pos,animation,spr)
+		if (ExplosionManager.numexplosions <  MAXEXPLOSIONS) then
+			table.insert(ExplosionManager.explosions,Explosion.Create(pos,animation,spr))
+			ExplosionManager.numexplosions	=	ExplosionManager.numexplosions + 1
+			causeEvent("StartExplosion")
+		end
+	end
+	
+	function ExplosionManager.Render(renderHelper)
+
+		for idx,explode in pairs(ExplosionManager.explosions) do
+			if (TextureAnim.IsPlaying(explode.anim)) then
+				Explosion.Render(explode,renderHelper)
+			end
+		end 
+	end
+	
+	function ExplosionManager.RenderDebug(renderHelper)
+		if (not Constants.RELEASE or ExplosionManager.DEBUG) then
+        	RenderHelper.DrawText(renderHelper,string.format("EXPLOSIONS %d",ExplosionManager.numexplosions),800,700)
+		end	
+	end
+	
+end

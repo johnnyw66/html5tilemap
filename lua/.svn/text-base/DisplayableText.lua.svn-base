@@ -1,0 +1,52 @@
+-- @header
+if (not DisplayableText) then
+
+DisplayableText				    =	{}
+DisplayableText.className       =	"DisplayableText"
+
+    function DisplayableText.Create(text,pos,scale,halign,valign,textCol)
+
+          local displayableText = {
+            text            =   text,
+            position        =   pos or { x = 0, y = 0 },
+			scale			=	scale or 1,
+            halign          =   halign or "center",
+            valign          =   valign or "center",
+            colour          =   textCol or {red = 127,blue = 0,green = 0,alpha = 127},
+            className       =   DisplayableText.className,
+        }
+        setmetatable(displayableText,{__index = DisplayableText } )
+        return displayableText
+    end
+
+
+
+    function DisplayableText.Update(displayabletext,dt)
+        
+    end
+
+    function DisplayableText.GetPosition(displayabletext)
+        return displayabletext.position
+    end
+
+    function DisplayableText.SetPosition(displayabletext,pos)
+         displayabletext.position = pos
+    end
+	
+	function DisplayableText.GetText(displayabletext)
+		return displayabletext.text
+	end
+	
+    function DisplayableText.Render(displayabletext,rHelper)
+            local x = displayabletext.position.x
+            local y = displayabletext.position.y
+            RenderHelper.SetFont(rHelper,FONT_POPUPMENU)
+			RenderHelper.DrawText(rHelper,displayabletext.text..FONT_POPUPMENU,x,y,displayabletext.scale,displayabletext.colour,displayabletext.halign,displayabletext.valign)
+            
+    end
+
+	function DisplayableText.toString(displayabletext)
+		return string.format("%s : %f,%f",displayabletext.text,displayabletext.position.x,displayabletext.position.y)
+	end
+
+end

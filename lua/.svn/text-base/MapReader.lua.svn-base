@@ -1,0 +1,191 @@
+-- @header
+
+if not MapReader then
+MapReader =		{}
+
+
+function MapReader.buildLuaTable(text)
+	local modtext 	=	text:gsub("^%s*(.-)%s*$", "%1")
+	local tbl		=	{}
+	
+	if (string.byte(modtext) == string.byte("{")  and 
+		string.byte(modtext,string.len(modtext)) == string.byte("}")) then
+		
+		string.gsub(modtext,"([A-Za-z_0-9]+)%W*[=][ ]*([^,}]+)",
+			function(var,val)
+				local ch = string.byte(val)
+				if (ch == string.byte("'") ) then
+					val = string.gsub(val, "'", "", 2)
+				elseif (ch <= string.byte('9')) then
+					val = tonumber(val)	
+				else
+					assert(false,"Eeeek! ")
+				end
+					tbl[var]	=	val
+				end)
+
+	end
+	
+	return tbl
+end
+
+local function buildLinkTable(leveldata)
+	local linktable = {}
+	
+	for k,leveldataArray in pairs(leveldata) do
+		if (type(leveldataArray) == "table" and (k == 'sprites' or k == 'shapes')) then
+			for _,leveldataValue in pairs(leveldataArray) do
+				for _,entry in pairs(leveldataValue) do
+					if (type(entry) == "table" and entry.linkid) then
+--						print("Got Link ID!",entry.linkid,entry.primitiveType)
+						linktable[entry.linkid] = entry
+					end
+				end
+			end
+		end
+	end
+	return linktable
+end
+
+local function resolveLinks(leveldata)
+	if (leveldata.objectLinks) then
+		linkTable = buildLinkTable(leveldata)
+		for _,link in pairs(leveldata.objectLinks) do
+			local fromObject = linkTable[link.linkfromid]
+			local toObject = linkTable[link.linktoid]
+			print("Linking ",fromObject.primitiveType,"to",toObject.primitiveType) 
+			fromObject.link = toObject 
+			toObject.link = fromObject
+			if (not fromObject.links) then
+			 	fromObject.links = {}
+			end
+			table.insert(fromObject.links,toObject)
+			if (not toObject.links) then
+			 	toObject.links = {}
+			end
+			table.insert(toObject.links,fromObject)
+		end
+	end
+end
+
+
+local function generateMaps(leveldata)
+	print("generateMap")
+	local maps = {}
+	for layeridx,aMap in pairs(leveldata.mapinfo) do
+		table.insert(maps,{mapinfo = leveldata.mapinfo[layeridx], mapdata = leveldata.mapdata[layeridx], primitiveType = 'map'})
+	end
+	return maps
+end
+
+
+local function generateObjects(leveldata)
+	print("generateObjects")
+	local objects = {}
+	local players = {}
+
+	for layeridx,lobjects in ipairs(leveldata.sprites) do
+	
+		for objectindex,lobject in ipairs(lobjects) do
+			local robj = Enemy.Create(lobject)
+			robj.index		=	objectindex		-- DEBUG
+			print("Generate Sprite/Object index = ",objectindex)
+			lobject.realobject	= robj	
+			if (robj.class == 'player') then
+				table.insert(players,robj)
+			else
+				table.insert(objects,robj)
+			end
+
+		end
+	end
+
+	return objects,players
+end
+
+
+local function generateShapes(leveldata)
+	print("generateShapes")
+	local shapes = {}
+
+	for layeridx,lshapes in pairs(leveldata.shapes) do
+
+		for shapeindex,lshape in pairs(lshapes) do
+			local rshape = Shape.Create(lshape) 
+			print("Generate Shape index = ",shapeindex)
+			lshape.realobject = rshape
+			table.insert(shapes,rshape)
+		end
+	
+	end
+
+	-- Now resolve attachments
+	for shapeIdx,shape in pairs(shapes) do
+		Shape.ResolveLinks(shape)
+	end
+	
+	
+	return shapes
+
+end
+
+
+local function generatePaths(leveldata)
+	print("generatePaths")
+	
+	local paths = {}
+	for layeridx,lpaths in pairs(leveldata.paths) do
+	
+		for pathindex,lpath in pairs(lpaths) do
+			local rpath = lpath.type == 'points' and Path.Create(lpath) or Spline.Create(lpath)
+			lpath.realpath = rpath
+			print("Generate Path index = ",pathindex)
+			table.insert(paths,rpath)
+		end
+	
+	end
+
+	return paths
+end
+
+
+
+local function generateGameObjects(leveldata)
+	resolveLinks(leveldata)
+
+	local paths = generatePaths(leveldata)
+	local sprites,players = generateObjects(leveldata)
+	local shapes = generateShapes(leveldata)
+	local maps = generateMaps(leveldata)
+
+	return maps,paths,sprites,players,shapes
+end
+
+
+local function loadLevel(levelName)
+
+	Resource.Run(levelName)
+	assert(LEVELDATA,'OH NO - LEVELDATA DOES NOT EXIST!'..levelName)
+	local map,paths,sprites,players,shapes = generateGameObjects(LEVELDATA)
+	LEVELDATA	=	nil
+--	Resource.Release(Resource.Find(levelName))
+	return map,paths,sprites,players,shapes
+end
+
+local function debugPaths(paths)
+	for pIdx,path in pairs(paths) do
+		print("DEBUG PATH",pIdx)
+		Path.Debug(path)
+	end
+end
+
+function MapReader.loadLevel(lName)
+	return loadLevel(lName)
+end
+
+function MapReader.debug(map,paths,sprites,shapes)
+	debugPaths(paths)
+end
+
+end
+

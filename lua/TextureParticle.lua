@@ -1,0 +1,79 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if (not TextureParticle) then
+TextureParticle				=	{}
+TextureParticle.className	=	"TextureParticle"
+
+local rad			=	math.rad
+local deg			=	math.deg
+local sin			=	math.sin
+local cos			=	math.cos
+
+
+	function TextureParticle.Create(initpackage)
+		Logger.lprint("TextureParticle.Create")
+
+		local textureparticle = {
+				time		=	0,
+				sprite 		= 	Sprite.Create(),
+				x			=	512,
+				y			=	360,
+				duration	=	7,
+				className	=	TextureParticle.className,
+		}
+
+		setmetatable(textureparticle, { __index = TextureParticle }) 
+		TextureParticle.Init(textureparticle,initpackage)
+		return textureparticle 
+	end
+
+	function TextureParticle.Init(textureparticle,initpackage)
+	
+		textureparticle.x				=	initpackage.x
+		textureparticle.y				=	initpackage.y
+		textureparticle.duration		=	initpackage.duration
+		textureparticle.velx			=	initpackage.velx
+		textureparticle.vely			=	initpackage.vely
+		textureparticle.texid			=	initpackage.texid or "textureparticleflare"
+
+		local anim 					=	TextureAnim.Create(1,initpackage.fps or 5)
+		textureparticle.anim			=	anim
+		TextureAnim.AddFrame(anim,{frame = 1,textureid=textureparticle.texid})
+		
+		textureparticle.alpha			=	0
+		
+		TextureAnim.Play(textureparticle.anim,true)
+		
+	end
+
+	function TextureParticle.Update(textureparticle,dt)
+		textureparticle.time	=	textureparticle.time + dt
+		textureparticle.alpha	=	1	-	math.min((textureparticle.time/textureparticle.duration),1)
+		textureparticle.x		=	textureparticle.x	+ textureparticle.velx*dt
+		textureparticle.y		=	textureparticle.y	+ textureparticle.vely*dt
+		
+	end
+
+	function TextureParticle.IsFree(textureparticle)
+		return textureparticle.time > textureparticle.duration
+	end
+
+	function TextureParticle.Alive(textureparticle)
+		return not TextureParticle.IsFree(textureparticle)
+	end
+
+	function TextureParticle.GetVectorPosition(textureparticle)
+		-- TODO OPTIMISE!
+		return Vector4.Create(textureparticle.x,textureparticle.y,0)
+	end
+	
+	
+	function TextureParticle.Render(textureparticle,renderHelper)
+		local textureid =	textureparticle.anim:GetRenderTexture().textureid
+		local rgba = {255,255,255,255*textureparticle.alpha}
+		Sprite.SetTexture(textureparticle.sprite,RenderHelper.TextureFind(textureid))
+		RenderHelper.DrawSprite(renderHelper,textureparticle.sprite,textureparticle.x,textureparticle.y,0.5,0,rgba)
+--		RenderHelper.DrawCircle(renderHelper, textureparticle.x, textureparticle.y, 8, rgba)
+	end
+	
+	
+end

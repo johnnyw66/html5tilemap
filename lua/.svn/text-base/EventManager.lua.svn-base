@@ -1,0 +1,111 @@
+-- @header
+if (not EventManager)  then
+
+EventManager = { }
+
+EventManager.className="EventManager" 
+EventManager.currentTime = 0 
+EventManager.eventTable = {}
+	
+	function EventManager.Init()
+		EventManager.currentTime = 0 
+		EventManager.eventTable = {}
+	end
+	
+	function EventManager.AddImmediateEvent(subevent,duration)
+        local triggerTime =   EventManager.currentTime 
+		EventManager.AddNewEvent(Event.Create(triggerTime,triggerTime+(duration or 0),subevent)) 
+        return (duration or 0) 
+
+	end
+
+
+	function EventManager.AddEventAfterTime(subevent,after,duration)
+        local triggerTime =   EventManager.currentTime + after 
+		EventManager.AddNewEvent(Event.Create(triggerTime,triggerTime+(duration or 0),subevent)) 
+    	return after+(duration or 0) 
+	end
+
+ 	function EventManager.AddSingleShotEvent(callback,param,timefromnow)
+ 		Logger.print("EventManager.AddSingleShotEvent - timefromnow ",timefromnow) 
+   		return EventManager.AddEventAfterTime(SingleShotEvent.Create(callback,param),timefromnow) 
+	end
+
+
+	function EventManager.AddNewEvent(event)
+		--Logger.print("AddNewEvent - ",event) 
+		EventManager.eventTable[event] = event 
+	end
+
+	function EventManager.ClearEvents(warning)
+		if (warning) then
+			for k,event in pairs(EventManager.eventTable) do
+				if (event ~= nil) then
+						event:EndEvent() 
+				end
+			end
+		end
+		EventManager.eventTable = {} 
+
+	end
+
+	function EventManager.RemoveEvent(event)
+		--Logger.print("EventManager.RemoveEvent ",event)
+		-- Remove from Event Manager list
+		EventManager.eventTable[event] = nil 
+	end
+
+
+	function EventManager.Update(dt)
+
+		--Logger.print("EventManager:Update()",EventManager.currentTime,dt) 
+    	EventManager.currentTime = EventManager.currentTime + dt 
+
+        for k,event in pairs(EventManager.eventTable) do
+            if (event ~= nil) then
+				--Logger.print("currentTime = "..EventManager.currentTime)
+				event:Update(EventManager.currentTime,dt) 
+				if (event:IsFinished()) then
+					EventManager.RemoveEvent(event) 
+				end
+			end
+		end
+
+
+
+	end
+
+	function EventManager.Debug()
+		Logger.print("EventManager.Debug()") 
+
+		for k,event in pairs(EventManager.eventTable) do
+			Logger.print("Event Manager Debug ",index,event)
+			event:Debug() 
+		end
+
+	end
+	
+	function EventManager.TestCallBack(param)
+		print("EventManager.TestCallBack With Param ",param, " Time is ",EventManager.currentTime) 
+	end
+
+	function EventManager.Test()
+		Logger.print("EventManager.Test() ",EventManager.className ) 
+		local soundHandle = nil 
+		local startVolume = 10 
+		local endVolume = 80 
+
+--		EventManager.AddImmediateEvent(SoundFadeEvent.Create(startVolume,endVolume,soundHandle,SoundFadeEvent.TYPE_COSINE),4.0) 
+
+		-- Call function EventManager.TestCallBack with a parameter after 16 (simulated) sseconds
+        EventManager.AddSingleShotEvent(EventManager.TestCallBack,666,16.0) 
+		while(true) do
+			EventManager.Update(0.05) 
+		end
+	end
+
+	Logger.print("Included EventManager ")
+--	EventManager.Test() 
+
+end
+

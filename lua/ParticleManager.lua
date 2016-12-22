@@ -1,0 +1,179 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if (not ParticleManager) then
+
+ParticleManager = { }
+
+ParticleManager.NUMPARTICLES = 40
+ParticleManager.PARTICLESPEREXPLOSION = 4
+
+ParticleManager.freelist = nil 
+ParticleManager.usedlist = nil 
+ParticleManager.enabled  = true
+
+
+
+	function ParticleManager.Init()
+		ParticleManager.freelist = nil
+		ParticleManager.usedlist = nil 
+       	ParticleManager.enabled  = true
+
+		for i=1,ParticleManager.NUMPARTICLES do
+			local p = Particle.Create()
+			local o = ParticleManager.freelist 
+			p.nxt = o 
+			if (o ~= nil) then
+				o.prev = p
+			end
+			ParticleManager.freelist = p 
+		end
+	end
+
+	function ParticleManager.GetParticle() 
+
+		if (ParticleManager.freelist ~= nil) then
+			local p = ParticleManager.freelist
+		
+			if (ParticleManager.freelist.nxt ~= nil) then
+				ParticleManager.freelist.prev = nil
+			end
+			
+			ParticleManager.freelist = ParticleManager.freelist.nxt
+
+			if (ParticleManager.usedlist ~= nil) then
+				ParticleManager.usedlist.prev = p
+			end
+			p.nxt = ParticleManager.usedlist
+			p.prev = nil 
+			ParticleManager.usedlist = p
+			return p
+		end
+	   	return nil
+	end
+
+
+	function ParticleManager.Update(dt)
+
+		local part = ParticleManager.usedlist 
+	
+		while(part ~= nil) do
+			local next = part.nxt
+			if (part:IsFree()) then
+				ParticleManager.Free(part)
+			else
+				Particle.Update(part,dt)
+			end
+			part = next
+		end
+
+	end
+
+	
+	function ParticleManager.Render(renderHelper) 
+	
+	 	if (ParticleManager.enabled) then
+	
+			local part = ParticleManager.usedlist
+	        
+			while(part ~= nil) do
+		  		Particle.Render(part,renderHelper)
+				part = part.nxt
+			end
+			
+        end
+
+	end
+	
+	function ParticleManager.GetInfo()
+		return ParticleManager.CountUsed()
+	end
+	
+	function ParticleManager.RenderDebug(renderHelper)
+    	RenderHelper.DrawText(renderHelper,string.format("PARTICLES %d",ParticleManager.CountUsed()),800,710)
+	end
+
+
+	function ParticleManager.Free(p)
+		if (ParticleManager.usedlist == p) then
+			ParticleManager.usedlist = p.nxt
+		end
+	
+		if (p.prev ~= nil) then
+			p.prev.nxt = p.nxt
+		end
+	
+		if (p.nxt ~= nil) then
+			p.nxt.prev = p.prev
+		end
+		p.prev = nil 
+		p.nxt = ParticleManager.freelist 
+	
+		if (ParticleManager.freelist ~= nil) then
+			ParticleManager.freelist.prev = p
+		end
+
+		ParticleManager.freelist = p
+	end
+
+	function ParticleManager.CountUsed()
+		local count =  0
+		local p = ParticleManager.usedlist
+		while(p ~= nil) do
+			count = count + 1
+			p = p.nxt
+		end
+		return count
+	end
+	
+	function ParticleManager:debugList(p)
+		print("Debug List ")
+		
+		while(p ~= nil) do
+			print("Debug "..p:toString())
+			p = p.nxt 
+		end
+	
+		print("End Debug List")
+	end
+    
+	function ParticleManager.Stop()
+		ParticleManager.enabled = false
+	end 
+	
+	function ParticleManager.Resume()
+	   ParticleManager.enabled = true
+	end
+	
+	function ParticleManager.AddChaff(x,y,velx,vely,duration)
+		return ParticleManager.AddTextureParticle("chaffflare",x,y,velx,vely,duration)
+	end
+
+	function ParticleManager.AddTextureParticle(texid,x,y,velx,vely,duration)
+		if (ParticleManager.enabled) then
+			local prt = ParticleManager.GetParticle()
+			local xpos 	=	x + 8 - math.random(0,16) 
+			local ypos	=	y + 8 - math.random(0,16)
+			if (prt) then
+				Particle.Init(prt,TextureParticle.Create,{x = xpos, y = ypos, velx = velx, vely = vely, duration = duration, texid = texid}) 
+			end
+			return prt
+       end
+		return nil
+	end
+	
+	function ParticleManager.Explode(x,y)
+		if (ParticleManager.enabled) then
+			for i = 1,ParticleManager.PARTICLESPEREXPLOSION do
+        		local prt = ParticleManager.GetParticle()
+				if (prt) then
+					local vel = math.random(10,160)
+					local dur = 2.0   
+					ang = math.random(180,360)
+					Particle.Init(prt,x,y,vel,ang*math.pi/180,dur) 
+				end
+			end
+       end
+	end
+	
+end
+
+

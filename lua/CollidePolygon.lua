@@ -1,0 +1,78 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if not CollidePolygon then
+
+CollidePolygon								=	{ }
+CollidePolygon.className					=	"CollidePolygon" 
+CollidePolygon.DEBUGCOLOUR					=	{255,255,255,255}
+
+	function CollidePolygon.Create(properties,width,colour)
+
+		local collidepolygon = {
+				properties			=	properties,
+				pixwidth			=	width,
+				colour				=	colour or CollidePolygon.DEBUGCOLOUR,
+				className			=	CollidePolygon.className,
+
+		}
+		setmetatable(collidepolygon, {__index = CollidePolygon })
+		CollidePolygon._Init(collidepolygon)
+		return collidepolygon 
+	end
+
+	function CollidePolygon._Init(collidepolygon)
+		assert(collidepolygon.properties,'CollidePolygon._Init - nil properties parameter passed.')
+
+		local properties 	= 	collidepolygon.properties
+		local angle			=	properties.angle or 0
+		
+		if (properties.points) then
+			collidepolygon.polygon = Polygon.BuildPolyFromUVPoints(properties.points,collidepolygon.pixwidth,collidepolygon.pixwidth,collidepolygon.colour)
+		elseif (properties and properties.numpoints) then
+		
+			local radiusmlt 		= 	properties.radius or 1
+			local phase				=	properties.phase or 0 
+			collidepolygon.polygon	= 	Polygon.BuildPoly(properties.numpoints,radiusmlt*collidepolygon.pixwidth*0.5,phase)	
+		
+		elseif (properties.p1x) then
+			collidepolygon.polygon = Polygon.BuildPolyFromUVProperties(properties,collidepolygon.pixwidth,collidepolygon.pixwidth,collidepolygon.colour)
+
+	 	elseif (properties[1] and properties[1].px) then
+			collidepolygon.polygon = Polygon.BuildPolyFromUVPoints(properties,collidepolygon.pixwidth,collidepolygon.pixwidth,collidepolygon.colour)
+		else
+			local twidth		=	math.min(1,math.max(0,properties.width or 1))
+			local theight		=	math.min(1,math.max(0,properties.height or 1))
+		
+			collidepolygon.polygon = Polygon.BuildRectPoly(twidth*collidepolygon.pixwidth,theight*collidepolygon.pixwidth,angle)	
+		end
+	end
+	
+	function CollidePolygon.Render(collidepolygon,renderHelper,position)
+		CollidePolygon.RenderDebug(collidepolygon,renderHelper,position)
+	end
+
+	function CollidePolygon.RenderDebug(collidepolygon,renderHelper,position)
+	--	RenderHelper.DrawCircle(renderHelper,position:X(),position:Y(),collidepolygon.radius,{255, 0, 0, 255},'line')
+	
+		local x,y		=	position:X(),position:Y()
+		local oldx,oldy	=	collidepolygon.polygon.x,collidepolygon.polygon.y
+		Polygon.SetPosition(collidepolygon.polygon,x,y)
+		Polygon.Render(collidepolygon.polygon,renderHelper)
+		Polygon.SetPosition(collidepolygon.polygon,oldx,oldy)
+	end
+
+	function CollidePolygon.IsPixelPointInside(collidepolygon,px,py,cx,cy)
+		return Polygon.IsPointInside(collidepolygon.polygon,px-cx,py-cy)
+	end
+
+	function CollidePolygon.IsPointInside(collidepolygon,position,point)
+--		Polygon.IsPointInside(collidepolygon.polygon,xpos,ypos)
+		return false
+	end
+
+	function CollidePolygon.toString(collidepolygon)
+		local str =	{}
+		return table.concat(str)
+	end
+	
+
+end

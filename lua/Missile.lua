@@ -1,0 +1,230 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if not Missile  then
+
+Missile 			=	{ }
+Missile.className 	=	"Missile"
+
+local 	kMAX_MISSILE_LEN	=	320
+local 	kMEDIUM_MISSILE_LEN	=	260
+local 	kMIN_MISSILE_LEN	=	160
+
+
+local	SCREEN_HEIGHT	=	720
+local	SCREEN_WIDTH	=	1024
+local	MISSILE_LEN		=	320
+
+Missile.MISSILE_LEN		=	MISSILE_LEN	
+	
+local sin	=	math.sin
+local cos	=	math.cos
+local pi	=	math.pi
+local floor	=	math.floor
+local rad	=	math.rad
+
+
+local	MISSILE_SPEED 	=	400.0
+	
+local	ANIM_ENEMYMISSILE_FRAME1	=	"enemy_missile__1"
+local	ANIM_ENEMYMISSILE_FRAME2	=	"enemy_missile__2"
+local	ANIM_ENEMYMISSILE_FRAME3	=	"enemy_missile__3"
+
+local	ANIM_PLAYERMISSILE_FRAME1	=	"player_missile__1"
+local	ANIM_PLAYERMISSILE_FRAME2	=	"player_missile__2"
+local	ANIM_PLAYERMISSILE_FRAME3	=	"player_missile__3"
+
+
+	-- local functions which allows us
+	-- to create Rotated Bezier curves
+	
+	local 	function rotatePoint(x,y,angle)
+
+		local rang	=	rad(angle)
+		local ca	=	cos(rang)
+		local sa	=	sin(rang)
+
+		local xt	=	x*ca - y*sa
+		local yt	=	x*sa + y*ca
+		
+		return Vector2.Create(xt,yt)	
+	end
+	
+	local	function createBezier(angle,isLeft)
+	
+		return isLeft and	
+					BezierLU.Create(rotatePoint(0,0,angle),
+									rotatePoint(-200,0,angle),
+									rotatePoint(100,-MISSILE_LEN/2,angle),
+									rotatePoint(0, -MISSILE_LEN,angle))
+					or		
+					BezierLU.Create( rotatePoint(0,0,angle),
+									rotatePoint(200,0,angle),
+									rotatePoint(-100,-MISSILE_LEN/2,angle),
+									rotatePoint(0, -MISSILE_LEN,angle))
+	end
+
+	
+	-- Missile.Create(Vector2 pos, int damage, boolean player, boolean left)
+
+	function Missile.Create( pos,  damage,  player, left, angle)
+	
+		Logger.print("Missile.New(Vector2 pos, int damage, boolean player, boolean left)")
+
+		local missile = {
+				damage			=	0,
+				strength		=	255,
+				pos				=	nil,
+				startPos		=	nil,
+				cachedPos 		=	nil,
+				markedForDeath 	=	false,
+				isPlayer 		=	false,
+				time 			=	0.0,
+				left			=	left,
+				direction		=	angle,
+				bezier			=	createBezier(angle or 135,left),
+				animation 		=	nil,
+				className		=	Missile.className,
+		}
+		setmetatable(missile,{ __index = Missile }) 
+
+
+		missile.cachedPos	= Vector2.Create(pos) 
+		missile.startPos 	= Vector2.Create(pos)
+		missile.pos 		= Vector2.Create(pos)
+
+		-- Keep a semi-perm Line2D Object for Collision 
+		-- This relies on pos and cachedPos never been destroyed for the life of a missile object.
+		missile.posv4		=	Vector2.CreateVector4(missile.pos)
+		missile.cachedPosv4	=	Vector2.CreateVector4(missile.cachedPos)
+		
+
+	--	assert(false,missile.posv4:toString())
+	--	assert(false,missile.cachedPosv4:toString())
+		
+		missile.colline 	= Line2D.Create(missile.posv4,missile.cachedPosv4) 		
+		
+		
+		missile.damage 	= damage
+		missile.isPlayer = player
+		missile.time = 0.0
+		
+		missile.animation = TextureAnim.Create(3)
+		if (missile.isPlayer) then
+			missile.animation:AddFrame(ANIM_PLAYERMISSILE_FRAME1)
+			missile.animation:AddFrame(ANIM_PLAYERMISSILE_FRAME2)
+			missile.animation:AddFrame(ANIM_PLAYERMISSILE_FRAME3)
+		else
+			missile.animation:AddFrame(ANIM_ENEMYMISSILE_FRAME1)
+			missile.animation:AddFrame(ANIM_ENEMYMISSILE_FRAME2)
+			missile.animation:AddFrame(ANIM_ENEMYMISSILE_FRAME3)
+		end
+		
+		missile.animation:Play(true, true)
+
+		return missile 
+		
+	end
+	
+	function Missile.SetMissileLength(len)
+		MISSILE_LEN				=	len
+		Missile.MISSILE_LEN		=	MISSILE_LEN	
+	end
+	
+	function Missile.GetCollisionLine(missile,dt)
+	
+		local bezx,bezy = missile.bezier:GetPositionXY(missile.time) 	
+		
+		-- SHIFT bezier to its origin position
+
+		if(missile.time <= 1.0) then
+		
+			missile.cachedPos.x = missile.startPos.x + bezx
+			missile.cachedPos.y = missile.startPos.y + bezy 
+			missile.cachedPosv4:SetXyzw(missile.cachedPos.x,missile.cachedPos.y,0,0)
+
+		else
+			Missile.MarkForDeath(missile)
+		end
+		
+		if (not missile.markedForDeath) then
+			missile.colline:CalculateCentreAndRadius() 		-- Re-calculate centre and radius
+			return missile.colline 
+		else
+			return nil
+		end
+	
+	end
+	
+	function Missile.Update(missile,dt)
+		
+		if (missile.animation) then
+			missile.animation:Update(dt)
+		end
+
+		missile.time = missile.time + MISSILE_SPEED * dt/ 1000.0
+		
+		if(not missile.markedForDeath) then
+			missile.posv4:SetXyzw(missile.pos.x,missile.pos.y,0,0)
+		
+			missile.pos.x = missile.cachedPos.x 
+			missile.pos.y = missile.cachedPos.y 
+			
+		else
+			if (missile.left) then
+				ExplosionManager.AddExplosion({x=missile.pos.x,y=missile.pos.y,z=0})
+			else
+				ExplosionManager.AddExplosion({x=missile.pos.x,y=missile.pos.y,z=0})
+			end
+		end
+		
+
+	end
+	
+	function Missile.Render(missile,renderHelper)
+
+		RenderHelper.DrawTexture(renderHelper,missile.animation:GetRenderTexture(),missile.pos.x, missile.pos.y,-missile.direction,0.5)
+	--	RenderHelper.DrawCircle(renderHelper,missile.pos.x, missile.pos.y, 4)
+	--	missile.colline:Render(renderHelper)
+		
+	end
+
+
+	function Missile.Cleanup(missile)
+		missile.colline		= nil 
+		missile.pos			= nil
+		missile.startPos	= nil
+	end
+	
+	function Missile.GetPosition(missile)
+		return missile.pos
+	end
+
+	function Missile.GetCoords(missile)
+		return missile.pos.x,missile.pos.y
+	end
+	
+	function Missile.SetPosition(missile,v)
+		missile.pos = Vector2.Create(v)
+	end
+	
+	function Missile.MarkForDeath(missile)
+		missile.markedForDeath = true
+		MissileManager.ReleaseMissile(missile)
+	end
+	
+	function Missile.IsMarkedForDeath(missile)
+		return missile.markedForDeath
+	end
+	
+	function Missile.IsPlayerMissile(missile)
+		return missile.isPlayer
+	end
+	
+	function Missile.ApplyDamage(missile,damage)
+			missile:MarkForDeath()
+	end
+	
+	function Missile.GetDamage(missile)
+		return missile.damage
+	end
+
+end

@@ -1,0 +1,1032 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <style>
+            body {
+                margin: 0px;
+                padding: 0px;
+            }
+			
+			.hide_canvas { display: none;}
+			
+            
+            #canvasBuffer1 {
+                border: 1px solid black;
+
+            }
+            
+			#c1 {
+			     width: 1024px;
+			     height:720px;
+			     margin: 0px auto;
+			     border: 1px solid white;
+			   }
+
+
+        </style>
+
+
+        <script>
+
+		var	msgResource			=	new Image() ;
+		msgResource.src			=	"assets/gfx/messagebackground.png" ;
+		
+		// add two new functions to localStorage - allowing us to 
+		// serialize stored 'objects'
+
+		Storage.prototype.setObject = function(key, value) {
+	    	this.setItem(key, JSON.stringify(value));
+		}
+
+		Storage.prototype.getObject = function(key) {
+	    	var value = this.getItem(key);
+	    	return value && JSON.parse(value);
+		}
+
+		var	lplayed 			=	localStorage.getObject("lastplayed") ;
+
+		
+		var storePlayInfo = function(gameid)
+		{
+			// Update and Store info on play time.
+		
+			var nTime			=	new Date().getTime() ;
+		
+			if (lplayed) {
+				lplayed.plays		=	lplayed.plays + 1 ;
+				lplayed.date		=	nTime ;
+			} else
+			{
+				lplayed				=	{ plays:0,date:nTime}
+			}
+		
+			localStorage.setObject("lastplayed",lplayed) ;
+		}
+		
+		// Create requestAnimFrame function callback - depending
+		// on the browser we are using.
+		
+		var	requestAnimFrame	=	
+		(function(){
+		      return  window.requestAnimationFrame       || 
+		              window.webkitRequestAnimationFrame || 
+		              window.mozRequestAnimationFrame    || 
+		              window.oRequestAnimationFrame      || 
+		              window.msRequestAnimationFrame     || 
+		              function( callback ){
+		                window.setTimeout(callback, 1000 / 60);
+		              };
+		    })();
+		
+			var preLoadAndRun = function()
+					{
+							
+						var	games	=	[
+							executeGame3,
+						] ;
+
+
+						//alert("Preload Test")
+						if (ImageResource.isLoaded()) 
+						{
+							games[lplayed.plays % games.length](KeyBoardHandlerSetup(),-1) ;
+							 
+						} else {
+
+							window.setTimeout(preLoadAndRun,10);
+						}
+						
+			}
+			
+
+            window.onload = function(){
+	
+				storePlayInfo() ;
+				
+				
+				new ImageResource("enemy_missile__1","assets/gfx/enemy_missile__1.png") ;
+				new ImageResource("enemy_missile__2","assets/gfx/enemy_missile__2.png") ;
+				new ImageResource("enemy_missile__3","assets/gfx/enemy_missile__3.png") ;
+				
+				new ImageResource("arrow","assets/gfx/arrow.png") ;
+
+
+				new ImageResource("radarbase2","assets/gfx/radarbase2.png") ;
+				new ImageResource("radar6","assets/gfx/radar6.png") ;
+
+				new ImageResource("house3","assets/gfx/house3.png") ;
+				new ImageResource("outhouse4","assets/gfx/outhouse4.png") ;
+				new ImageResource("hut5","assets/gfx/hut5.png") ;
+
+				new ImageResource("tankbottom6","assets/gfx/tankbottom6.png") ;
+				new ImageResource("tanktop6","assets/gfx/tanktop6.png") ;
+
+				new ImageResource("smalljeep6","assets/gfx/smalljeep6.png") ;
+				new ImageResource("smalljeepgun6","assets/gfx/smalljeepgun6.png") ;
+
+				new ImageResource("largejeep2","assets/gfx/largejeep2.png") ;
+				new ImageResource("largejeeptop2","assets/gfx/largejeeptop2.png") ;
+				
+
+				new ImageResource("bullethits","assets/gfx/bullethits.png") ;
+				new ImageResource("bullets_land","assets/gfx/bullets_land.png") ;
+				new ImageResource("bullets","assets/gfx/bullets.png") ;
+
+				new ImageResource("enemy_helishadow","assets/gfx/helishadow.png") ;
+				new ImageResource("enemy_helibody","assets/gfx/helibody.png") ;
+				new ImageResource("enemy_heliblades","assets/gfx/heliblades.png") ;
+
+				new ImageResource("helibody","assets/gfx/helibody.png") ;
+				new ImageResource("heliblades","assets/gfx/heliblades.png") ;
+				new ImageResource("helishadow","assets/gfx/helishadow.png") ;
+				new ImageResource("messagebackground","assets/gfx/messagebackground.png") ;
+				
+				new ImageResource("enemyflyingbody","assets/gfx/enemy_helibody.png") ;
+				new ImageResource("enemyflyingblades","assets/gfx/enemy_heliblades.png") ;
+				new ImageResource("HeliLand01.png","assets/gfx/HeliLand01.png") ;
+				new ImageResource("cute.png","assets/gfx/cute.png") ;
+				new ImageResource("explosionuv64.png","assets/gfx/explosionuv64.png") ;
+				new ImageResource("jeep.png","assets/gfx/jeep.png") ;
+				new ImageResource("messagebackground.png","assets/gfx/messagebackground.png") ;
+				
+				new ImageResource("person.png","assets/gfx/person.png") ;
+				new ImageResource("smoke8x4.png","assets/gfx/smoke8x4.png") ;
+				new ImageResource("smoke_loop.png","assets/gfx/smoke_loop.png") ;
+				new ImageResource("tileset1.png","assets/gfx/tileset1.png") ;
+				new ImageResource("tileset.png","assets/gfx/tileset.png") ;
+				
+				preLoadAndRun() ;
+				
+            };
+        </script>
+    </head>
+  
+
+  
+	<body>
+		<audio id='mainmusic' autopla loop='true'>
+		  <source src="assets/audio/song.ogg" type="audio/ogg"  />
+		  <source src="assets/audio/song.mp3" type="audio/mpeg"  />
+		  Your browser does not support the audio element.
+		</audio>
+		<audio id='song'  loop='true'>
+		  <source src="assets/audio/song.ogg" type="audio/ogg"  />
+		  <source src="assets/audio/song.mp3" type="audio/mpeg"  />
+		  Your browser does not support the audio element.
+		</audio>
+		<div id="c1">
+        <canvas id="canvasBuffer1" width="1024" height="720"></canvas>
+		</div>
+    </body>
+
+	<script type="text/javascript" src="source/library/md5.js"></script>
+	<script type="text/javascript" src="source/library/LinkedList.js"></script>
+	<script type="text/javascript" src="source/library/Vector4.js"></script>
+	<script type="text/javascript" src="source/library/Vector2.js"></script>
+	<script type="text/javascript" src="source/library/Line2D.js"></script>
+	<script type="text/javascript" src="source/library/Matrix44.js"></script>
+	<script type="text/javascript" src="source/library/ImageResource.js"></script>
+	<script type="text/javascript" src="source/library/Sprite.js"></script>
+	<script type="text/javascript" src="source/library/Spritesheet.js"></script>
+	<script type="text/javascript" src="source/library/Renderhelper.js"></script>
+	<script type="text/javascript" src="source/library/TextureAnim.js"></script>
+	<script type="text/javascript" src="source/library/Bezier.js"></script>
+	<script type="text/javascript" src="source/library/Singleshotevent.js"></script>
+	<script type="text/javascript" src="source/library/Event.js"></script>
+	<script type="text/javascript" src="source/library/Eventmanager.js"></script>
+	<script type="text/javascript" src="source/library/WorldClock.js"></script>
+	<script type="text/javascript" src="source/library/KDampedOscillator.js"></script>
+	<script type="text/javascript" src="source/library/Ktimer.js"></script>
+	<script type="text/javascript" src="source/library/SpringBox.js"></script>
+	<script type="text/javascript" src="source/library/DisplayableTextWithImage.js"></script>
+	<script type="text/javascript" src="source/library/Message.js"></script>
+	<script type="text/javascript" src="source/library/MessageManager.js"></script>
+	<script type="text/javascript" src="source/library/Locale.js"></script>
+	<script type="text/javascript" src="source/library/Spline.js"></script>
+	<script type="text/javascript" src="source/library/TriggerManager.js"></script>
+	<script type="text/javascript" src="source/library/QuadHotspot.js"></script>
+	<script type="text/javascript" src="source/library/ObserverEvent.js"></script>
+	<script type="text/javascript" src="source/library/TileMap.js"></script>
+	<script type="text/javascript" src="source/library/Path.js"></script>
+	<script type="text/javascript" src="source/library/Animation.js"></script>
+	<script type="text/javascript" src="source/library/Bullet.js"></script>
+	<script type="text/javascript" src="source/library/Orbitor.js"></script>
+	<script type="text/javascript" src="source/library/Enemy.js"></script>
+	<script type="text/javascript" src="source/library/EnemyPart.js"></script>
+	<script type="text/javascript" src="source/library/Camera.js"></script>
+	<script type="text/javascript" src="source/library/Explosion.js"></script>
+	<script type="text/javascript" src="source/library/HomingMissile.js"></script>
+	<script type="text/javascript" src="source/library/PlayerHelicopter.js"></script>
+	<script type="text/javascript" src="source/library/_3D.js"></script>
+	<script type="text/javascript" src="source/library/_3DCamera.js"></script>
+	<script type="text/javascript" src="source/library/_3DEdge.js"></script>
+	<script type="text/javascript" src="source/library/_3DTriangle.js"></script>
+	<script type="text/javascript" src="source/library/_3DEntity.js"></script>
+	<script type="text/javascript" src="source/library/_3DModel.js"></script>
+	<script type="text/javascript" src="source/library/_3DPolygon.js"></script>
+	<script type="text/javascript" src="source/library/_3DScene.js"></script>
+	<script type="text/javascript" src="source/library/_3DViewer.js"></script>
+	<script type="text/javascript" src="source/library/exampleModel.js"></script>
+	<script type="text/javascript" src="source/library/fanModel.js"></script>
+	<script type="text/javascript" src="source/main/ExampleLevelData.js"></script>
+	<script type="text/javascript" src="source/main/EnemyData.js"></script>
+	<script type="text/javascript" src="source/main/game3.js"></script>
+
+	<script type="text/javascript">
+	var mousex =	0 ;
+	var mousey =	0 ;
+	var lastKey	=	0 ;
+	//PathManager.Test() ;
+	
+	function _keyEvent(evt)
+	{
+		var keyID	=	evt.keyCode;
+		
+		alert("KEY EVENT "+lastKey+" type "+evt.type)
+		if (lastKey) {
+				
+		}
+
+		lastKey = 0 ;		// Clear 
+		
+	
+	}
+	
+	
+	function KeyBoardHandlerSetup(filterset,bndings)
+	{
+		var	buffer			=   new Array() ;
+		var	keyState		=	new Array() ;
+		var	kevent			= 	"" ;
+		var	bindings		=	{} ;
+		
+			
+		return {
+				 
+				bindKey: 		function(realKey,keyID)
+									{
+										
+										if (!bindings[keyID]){
+											bindings[keyID] = new Array() ;
+										}
+										bindings[keyID].push(realKey) ;
+									},
+				_wasJustPressed:	function(realKey)
+								{
+									var state = keyState[realKey] ;
+									keyState[realKey] = null
+									return state ; 
+								},
+
+				isPressed: 		function(keyID)
+								{
+									return this.isPressedKeyID(keyID) ; // || this._isPressed(keyID) ;
+								},
+
+				isPressedKeyID:	function(keyID)
+							{
+								var realKeys	=	bindings[keyID] ;
+								for (var bnd in realKeys) 
+								{
+									
+									var realKey = realKeys[bnd] ;
+									if (this._isPressed(realKey))
+									{
+										return true ;
+									}	
+								}
+								return false ;
+							},
+
+				_isPressed:	function(realKey)
+							{
+								var state = keyState[realKey] ;
+								return state && state == 'keydown' ;	
+							},
+
+				getLastEvent:
+							function()
+							{
+								return kevent ;
+							},
+				handler:	function(evt) 
+							{ 
+								var realKey			=	evt.keyCode;
+								var type			=	evt.type;
+								kevent 				=	"KEY "+realKey+" TYPE "+type ;
+								keyState[realKey]	=	type ;
+							}
+
+			}
+	}
+	// define game callback
+	var setMouseValues = function(evt)
+	{
+		mousex = evt.clientX
+		mousey = evt.clientY
+		return true ;
+	}
+
+	var setKeyValues = function(evt)
+	{
+		var keyID	=	evt.keyCode;
+		lastKey		=	keyID ;
+		_keyEvent(evt) ;
+		return true ;
+	}
+
+	var executeGame5 = (function() {
+		document.body.onmousemove = setMouseValues;
+	}) ;
+	
+	var executeGame = (function() {
+		var KeyBoardHandler		=	 KeyBoardHandlerSetup() ;
+		
+		document.body.onmousemove = setMouseValues;
+		document.body.onkeyup 	= 	KeyBoardHandler.handler;
+		document.body.onkeydown = 	KeyBoardHandler.handler;
+		
+		var DISPLAYWIDTH 	=	document.getElementById('canvasBuffer1').width ;
+		var DISPLAYHEIGHT 	=	document.getElementById('canvasBuffer1').height ;
+		var tileSetImgRes	=	new ImageResource("tileset1.png") ;
+		
+		var	tmap			=	null, camera = null,player = null,cameraOrbitor = null ;
+		var	mat				=	Matrix44.Create() ;
+
+		PathManager.Init(ExampleLevelData.paths) ;
+		EnemyManager.Init(ExampleLevelData.enemies) ;
+		
+		TestMatrix() ;
+		
+		var hotSpots						=	{
+			QHOTSPOT_ROBE: 		QuadHotspot.Build2DPoly(700,200,100,45,"QHOTSPOT_ROBE"),
+			QHOTSPOT_THUNDER: 	QuadHotspot.Build2DPoly(100,300,140,35,"QHOTSPOT_THUNDER"),
+			QHOTSPOT_SHADOW: 	QuadHotspot.Build2DPoly(900,400,150,90,"QHOTSPOT_SHADOW"),
+			QHOTSPOT_POTS: 		QuadHotspot.Build2DPoly(600,500,60,0,"QHOTSPOT_POTS"),
+			QHOTSPOT_SCREAM: 	QuadHotspot.Build2DPoly(1000,600,40,60,"QHOTSPOT_SCREAM"),
+		} ;
+		
+		var bezRelTable = 
+		[
+			[{x: 0.205078, y: 0.495833},{x: 0.467773, y: 0.195833},{x: 0.752930, y: 0.498611},{x: 0.452148, y: 0.793056}],
+			[{x: 0.203125, y: 0.493056},{x: 0.469727, y: 0.195833},{x: 0.753906, y: 0.494444}],
+			[{x: 0.452148, y: 0.788889},{x: 0.203125, y: 0.495833},{x: 0.464844, y: 0.201389}],
+			[{x: 0.752930, y: 0.493056},{x: 0.451172, y: 0.790278},{x: 0.205078, y: 0.498611}],
+		] ;
+		
+		
+		
+		var FPS				=	4 ;
+		var	numSprites 		=	0 ;
+		
+		
+		var frame_counter 	=	0 ;
+		var now				=	new Date().getTime() ;
+		var lastTime 		=	now ;
+		var gameTime 		= 	0 ;
+		var	lastgameTime	=	0 ;
+		var	stp				=	new vector2(0,0) ;
+		var	cp1				=	new vector2(DISPLAYWIDTH/2,DISPLAYHEIGHT/5) ;
+		var	etp				=	new vector2(DISPLAYWIDTH,DISPLAYHEIGHT) ;
+		var	cp2				=	new vector2(DISPLAYWIDTH-cp1.x,DISPLAYHEIGHT-cp1.y) ;
+		
+		var	bez				=	new bezier(stp,cp1,cp2,etp) ;
+		
+		var totalTime		=	0 ;
+		var	avDT			=	0 ;
+		var dt				=	0 ;
+		var	dtSamples		=	0 ;
+
+		var freq 			= 	5 	;
+		var radius			=	120 	;
+		var mySprite		=	new sprite("cute.png") ;
+		var bezSprite		=	new sprite("cute.png") ;
+		var nasty			=	new sprite("cute.png") ;
+		
+		var sprSheet		=	new spritesheet("explosionuv64.png",8,4) ;
+		var personSheet		=	new spritesheet("person.png",6,4) ;
+		var personAnim		=	new textureanim(FPS) ;
+		
+		var anim			=	new textureanim(FPS) ;
+		var	v1				=	Vector4.Create(1,0,0) ;
+		var eventmgr		=	new eventManager() ;
+		var	sbox			=	SpringBox.Create(DISPLAYWIDTH*0.5,200,-160,1,12,100,5) ;
+
+		var nasties			=	[
+									{spr:nasty, x:800, y:600},
+									{spr:nasty, x:1024, y:1024},
+									{spr:nasty, x:2824, y:2024},
+									{spr:nasty, x:2024, y:2424},
+									{spr:nasty, x:3600, y:3180},
+									
+								] ;
+								
+		var cbF				=	function(p)
+								{
+									var msgYpos	=	DISPLAYHEIGHT*0.5 ;
+									msgYpos		=	DISPLAYHEIGHT - 100 ;
+									AddMessage( DisplayableTextWithImage.Create(
+													mySprite.getX() < 0 ? Locale.GetLocaleText("Demo by John Wilson, Brighton") : Locale.GetLocaleText("email: junk66@talk21.com"),
+													{x:DISPLAYWIDTH*0.5,y:msgYpos}),
+													-100,msgYpos,DISPLAYWIDTH*0.5,false)
+									
+									var posx	=	mySprite.getX() ;
+									if (posx < 0) {
+										sbox	=	SpringBox.Create(DISPLAYWIDTH*0.5,msgYpos,-160,1,12,100,5) ; 
+									} else
+									{
+										sbox	=	SpringBox.Create(-160,msgYpos,DISPLAYWIDTH*0.5,1,12,100,5) ; 
+									}
+									
+									sbox.Start() ;
+									eventmgr.addSingleShotEvent(cbF,"Hello "+eventmgr._getSize(),10)
+								}
+		
+		
+		AnimationManager.Init() ;
+		var playNow	=	true ;
+		var MAPOVERLAY	=	7 ;
+		var HUDOVERLAY	=	15 ;
+		AnimationManager.Add(new Animation({x:400,y:700,loop:true,bounce:true},playNow),MAPOVERLAY) ;
+		AnimationManager.Add(new Animation({x:500,y:700,loop:true,bounce:true,scale:3,timeout:10},playNow),MAPOVERLAY) ;
+		AnimationManager.Add(new Animation({x:600,y:700,loop:true,bounce:true},playNow),MAPOVERLAY) ;
+		AnimationManager.Add(new Animation({x:700,y:700,loop:true,bounce:true,scale:4},playNow),MAPOVERLAY) ;
+		AnimationManager.Add(new Animation({texture:"smoke_loop.png",x:2024,y:2424,loop:true,bounce:false,scale:4,timeout:15},playNow),MAPOVERLAY) ;
+		AnimationManager.Add(new Animation({x:3600,y:3180,loop:true,bounce:true,scale:4},playNow),MAPOVERLAY) ;
+
+		AnimationManager.Add(new Animation({x:64,y:64,loop:true,bounce:true,scale:1},playNow),HUDOVERLAY) ;
+		
+		
+		var t = eventmgr.addSingleShotEvent(cbF,"Hello There!",4)
+		anim.addFrame("frame01") ;
+		anim.addFrame("frame02") ;
+		anim.addFrame("frame03") ;
+		anim.addFrame("frame04") ;
+		anim.play(true,true)
+
+		personAnim.addFrame({frame:0}) ;
+		personAnim.addFrame({frame:1}) ;
+		personAnim.addFrame({frame:2}) ;
+		personAnim.addFrame({frame:3}) ;
+		personAnim.addFrame({frame:4}) ;
+		personAnim.addFrame({frame:5}) ;
+		personAnim.play(true,true)
+
+		
+		tests() ;
+		
+		var frame		=	0 ;
+		
+		var myA			=	0 ;
+		var gameSprites	=	new Array() ;
+
+		for (var i = 0 ; i < numSprites ; i++) {
+			var spr = 	new sprite("HeliLand01.png",0,0) ;
+			gameSprites[i] = spr ;
+			spr._cx	=	Math.floor((Math.random()*DISPLAYWIDTH)+1); 
+			spr._cy	=	Math.floor((Math.random()*DISPLAYHEIGHT)+1); 
+
+		}
+
+		var jeepSpr = 	new sprite("jeep.png",0,0) ;
+		
+		mySprite.setPosition(50,100) ;
+
+		var fred = 44 ;
+		var rHelper = new renderhelper(document.getElementById("canvasBuffer1").getContext("2d"),document.getElementById("canvasBuffer1").getContext("2d"),
+										DISPLAYWIDTH,DISPLAYHEIGHT) ;
+
+										
+		MessageManager.Init() ;
+		var orbitor = InitOrbitor(bezRelTable) ;
+		CameraOrbitorUpdate(orbitor,dt) ;
+		jeepSpr.setPosition(orbitor.x,orbitor.y) ;
+		InitHotspots() ;
+		
+//		the_image.onload = ( return function ( fish ) { console.log( "ready" + fish ) ; } ; )( 22 ) ;
+//		the_image.onerror = ( return function ( err ) { console.log( "error" + err ) ; } ; )( 666 ) ;
+
+		function CheckIt()
+		{
+			_debugPrint("THUNDER CHECK IT!")
+			return true
+		}
+	
+		function TriggerThunderEvent()
+		{
+			alert("TriggerThunderEvent")
+		}
+
+		function TriggerRobeEvent()
+		{
+			alert("TriggerRobeEvent")
+		}
+		
+		function TriggerShadowEvent()
+		{
+			alert("TriggerShadowEvent")
+		}
+		
+		function TriggerPotsEvent()
+		{
+			alert("TriggerPotsEvent")
+		}
+		
+		function TriggerScreamEvent()
+		{
+			alert("TriggerScreamEvent")
+		}
+
+		var mouseObject	= 
+		{
+				pos: Vector4.Create(),
+				GetVectorPosition: function()
+				{
+					this.pos.SetXyzw(mousex,0,mousey) ;
+					return this.pos ;
+				}
+		}
+		
+		function InitHotspots()
+		{
+			var	HOTSPOT_ROBE			=	hotSpots.QHOTSPOT_ROBE
+			var	DURATION_TRG_ROBE		=	5
+			var	PCHANCE_ROBE			=	10
+
+			var	HOTSPOT_THUNDER			=	hotSpots.QHOTSPOT_THUNDER
+			var	DURATION_TRG_THUNDER	=	5
+			var	PCHANCE_THUNDER			=	40
+
+			var	HOTSPOT_SHADOW			=	hotSpots.QHOTSPOT_SHADOW
+			var	DURATION_TRG_SHADOW		=	7
+			var	PCHANCE_SHADOW			=	100
+
+			var	HOTSPOT_POTS			=	hotSpots.QHOTSPOT_POTS
+			var	DURATION_TRG_POTS		=	8
+			var	PCHANCE_POTS			=	10
+
+			var	HOTSPOT_SCREAM			=	hotSpots.QHOTSPOT_SCREAM
+			var	DURATION_TRG_SCREAM		=	10
+			var	PCHANCE_SCREAM			=	90
+
+			TriggerManager.Init()
+			TriggerManager.Add(Trigger.Create(HOTSPOT_THUNDER,[ObserverEvent.Create(DURATION_TRG_ROBE,PCHANCE_ROBE,TriggerThunderEvent,CheckIt)]))
+			TriggerManager.Add(Trigger.Create(HOTSPOT_ROBE,[ObserverEvent.Create(DURATION_TRG_THUNDER,PCHANCE_THUNDER,TriggerRobeEvent)]))
+			TriggerManager.Add(Trigger.Create(HOTSPOT_SHADOW,[ObserverEvent.Create(DURATION_TRG_SHADOW,PCHANCE_SHADOW,TriggerShadowEvent)]))
+			TriggerManager.Add(Trigger.Create(HOTSPOT_POTS,[ObserverEvent.Create(DURATION_TRG_POTS,PCHANCE_POTS,TriggerPotsEvent)]))
+			TriggerManager.Add(Trigger.Create(HOTSPOT_SCREAM,[ObserverEvent.Create(DURATION_TRG_SCREAM,PCHANCE_SCREAM,TriggerScreamEvent)]))
+			
+		}
+		
+		
+		function AddMessage(message,xstart,ypos,xend,pool)
+		{
+			var sb		=	SpringBox.Create(xend,ypos,xstart,1,12,100,5)	
+			MessageManager.Add(Message.Create(message,sb,5),pool)
+		}
+	
+		function doKeyDown(evt){
+			var charCode = evt.which;
+			var charStr = String.fromCharCode(charCode);
+			//console.log( charStr ) ; 
+		}
+		function update()
+		{
+			now				=	new Date().getTime() ;
+			var timeDiff 	= 	now - lastTime ;
+			lastTime		=	now ;
+//			var ldt			=	(timeDiff/1000) ;
+			totalTime		=	totalTime + timeDiff ;		// total time in milliseconds
+
+			dtSamples++ ;
+			avDT			=	(totalTime / dtSamples)/1000 ;
+			
+//			updateGame(timeDiff/1000) ;
+			updateGame(avDT) ;
+//			updateGame(0.03) ;
+			
+			
+			if (!tmap && tileSetImgRes.isLoaded())
+			{
+				tmap				=	TileMap.Create(ExampleLevelData.mapdata,tileSetImgRes,{width:DISPLAYWIDTH,height:DISPLAYHEIGHT},{width:64,height:64}) ;
+					
+				player				=	{
+											_x: 1024,
+											_y: 1024,
+											_z: 0, 
+											dim: tmap.GetDimensions(),
+											GetPosition: function()
+														{
+															return {_x: this._x, _y:this._y, _z: this._z}
+														},
+											update: function(dt)
+													{
+														
+													},
+											move: 	function(dx,dy)
+													{
+															this._x	=	this._x	+ dx ;
+															this._y	=	this._y + dy ;
+															
+													},
+											draw:   function(rHelper)
+													{
+														
+													},
+										}
+				cameraOrbitor		=	new Orbitor(bezRelTable,tmap.GetDimensions().X(),tmap.GetDimensions().Y())
+				
+				// follow  player,cameraOrbitor or one of the enemies 
+				// here - we select the last enemy in our list - delibrately set as a flying object!
+				
+				var	follow			=	EnemyManager.GetEnemy(EnemyManager.GetSize() - 1) ;	
+
+				camera				=	Camera.Create(
+												{ X: function() { return DISPLAYWIDTH ; }, Y: function() { return DISPLAYHEIGHT ; } },
+												tmap.GetDimensions(),follow) ;
+												
+			}
+
+			drawDoubleBuffer() ;
+			requestAnimFrame(update) ;
+			
+		}
+		
+		
+		function updateGame(dt)
+		{
+			WorldClock.Update(dt) ;
+			sbox.Update(dt) ;
+			var boxpos	=	sbox.GetPosition() ;
+			mySprite.setPosition(boxpos.x,boxpos.y)
+			
+			MessageManager.Update(dt)
+			CameraOrbitorUpdate(orbitor,dt) ;
+			TriggerManager.Update(dt,mouseObject) ;
+			
+			jeepSpr.setPosition(orbitor.x,orbitor.y) ;
+			
+			gameTime		=	gameTime + dt ;
+			eventmgr.Update(dt) ;
+			anim.update(dt) ;
+			personAnim.update(dt) ;
+
+			AnimationManager.Update(dt) ;
+			EnemyManager.Update(dt) ;
+
+			if (camera) {
+
+				if (KeyBoardHandler.isPressed(KeyBoardHandler.RIGHTKEY))
+				{
+					player.move(24,0) ;
+				}	
+				if (KeyBoardHandler.isPressed(KeyBoardHandler.LEFTKEY))
+				{
+					player.move(-24,0) ;
+				}	
+				if (KeyBoardHandler.isPressed(KeyBoardHandler.UPKEY))
+				{
+					player.move(0,-24) ;
+				}	
+				if (KeyBoardHandler.isPressed(KeyBoardHandler.DOWNKEY))
+				{
+					player.move(0,24) ;
+				}	
+				
+				player.update(dt) ;
+				camera.Update(dt) ;
+			}
+			
+			mySprite.setRotation(myA) ;
+			myA		=	myA	+ dt*10 ;
+			
+			for (var idx = 0 ; idx < numSprites ; idx++) {
+				var spr = gameSprites[idx] ;
+				var phase 	=	1.5*(idx - numSprites/2) ;
+				var fadj	=	(idx+1)/numSprites
+				spr.setPosition(spr._cx + idx*4 + radius*Math.sin(gameTime*freq*fadj+phase),spr._cy - idx*4 + radius*Math.cos(gameTime*freq*fadj+phase)) ;
+			}
+
+			var tv = 0.5*(1+Math.sin(gameTime*freq*0.125))
+			var bzpos	=	bez.getPositionXY(tv) ;
+			bezSprite.setPosition(bzpos.x,bzpos.y) ;
+			
+			if (gameTime-lastgameTime > 0.06125) {
+				frame++ ;
+				lastgameTime	=	gameTime ;
+			}
+		}
+		
+		var frame_counter = 0 ;
+		
+		function drawDoubleBuffer()
+		{
+			// Double Buffer  - 
+
+			
+			frame_counter++ ;
+			draw()
+			
+			canvas_div = document.getElementById("c1") ;
+			//canvas_div.style.top = Math.sin( frame_counter / 100 ) * 100 + "px" ;
+			//canvas_div.style.left = Math.cos( frame_counter / 100 ) * 100 + "px" ;
+		
+		}
+		
+		function draw()
+		{
+
+			
+			rHelper.clearRect()
+			
+			if (tmap)
+			{
+				var ypos = 1024+parseInt(1024*Math.sin(6*gameTime*0.006))
+				var xpos = 1024+parseInt(1024*Math.cos(6*gameTime*0.006))
+				var camerapos	=	 camera && camera.GetTopLeft() || {x:0,y:0};
+
+				xpos	=	camerapos.x ;
+				ypos	=	camerapos.y ;
+				
+				
+				rHelper.setOverlay(0) ;
+				
+//				tmap.Render(rHelper,1024+80*Math.sin(6*gameTime*0.125),104)
+				tmap.Render(rHelper,xpos,ypos)
+
+				rHelper.setOverlay(1) ;
+
+
+				rHelper.drawText("tx,ty = "+xpos+", "+ypos,DISPLAYWIDTH*0.5,20,[0,90,0]) ;
+				rHelper.drawText("CLICK ON MAP AND USE ARROW KEYSx TO SCROLL",DISPLAYWIDTH*0.5,40,[255,255,255],{horizontal:"center",vertical:"top"},"italic 20pt Calibri") ;
+				
+				rHelper.drawText("ANIMATION MANAGER "+AnimationManager.Size(),DISPLAYWIDTH*0.5,80,[0,0,0],{horizontal:"center",vertical:"top"},"italic 20pt Calibri") ;
+
+					
+				// Draw These Sprites relative to current tilemap position
+				
+				rHelper.setOverlay(MAPOVERLAY) ;
+				rHelper.camera2dSetPostition(xpos,ypos) ;
+				
+				for (var idx = 0 ; idx < nasties.length ; idx++)
+				{
+					var nasty 	= nasties[idx] ;
+					var vframe	= personAnim.getRenderTexture().frame ;	
+					// NOTE - we can avoid this translation by allowing one 
+					// translation on the canvas context!
+					// TODO - implement 16 x 'overlays' in renderHelper.
+					// each overlay will have its own scale/translation/font values 
+					rHelper.drawSpriteSheet(personSheet,nasty.x,nasty.y,vframe) ;
+					
+				//	nasty.spr.setPosition(nasty.x-xpos,nasty.y-ypos) ;
+				//	rHelper.drawSprite(nasty.spr) ;
+				}
+				
+				player.draw(rHelper) ;
+				PathManager.Render(rHelper) ;
+				EnemyManager.Render(rHelper) ;
+				
+				
+//				1024+80*Math.sin(6*gameTime*0.125))
+			}
+
+			
+			for (var idx = 0 ; idx < nasties.length ; idx++)
+			{
+				var from = nasties[idx] 
+				var to = nasties[idx + 1] || nasties[0] ; 
+				rHelper.drawLine(from.x,from.y,to.x,to.y);
+			}
+
+			
+			rHelper.setOverlay(3) ;
+			//renderArrowHead:	function(direction,baseVector,stemLength,tipAngle,colour)
+			
+//			rHelper.renderArrowHead(45,Vector4.Create(360,300),80,45) ;
+			rHelper.drawText("DT="+avDT+" numSprites = "+numSprites, 10, 10);
+			rHelper.drawText(sprSheet, 10, 20);
+			rHelper.drawText(anim.getRenderTexture(), 10, 30);
+//			rHelper.drawText("TIME: "+WorldClock.GetClock(), 10, 40);
+			rHelper.drawText("TIME: "+parseInt(gameTime)+" v "+parseInt(totalTime/1000), 10, 40);
+			rHelper.drawText("POS:             "+mySprite.getX()+","+mySprite.getY(), 10, 50);
+			rHelper.drawText("MOUSE:             "+mousex+","+mousey, 10, 60);
+
+			rHelper.setOverlay(MAPOVERLAY-1) ;
+			
+		//	rHelper.drawSprite(mySprite) ;
+			rHelper.drawCircle(mySprite.getX(),mySprite.getY(),4)
+
+			
+			for (var sprIndex in gameSprites){
+					var sprite	=	gameSprites[sprIndex] ;
+					rHelper.drawSprite(sprite) ;
+			}
+			
+		//	rHelper.drawSpriteSheet(sprSheet,100,100,frame+5,-myA,1,1) ;
+		//	rHelper.drawSpriteSheet(sprSheet,200,200,frame+1,-myA,1,1) ;
+		//	rHelper.drawSpriteSheet(sprSheet,300,400,frame+3,-myA,1,1) ;
+		//	rHelper.drawSpriteSheet(sprSheet,900,100,frame+20,-myA,2,2) ;
+		//	rHelper.drawSpriteSheet(sprSheet,900,500,frame+16,-myA,2,2) ;
+
+			rHelper.setOverlay(MAPOVERLAY+1) ;
+			rHelper.drawSprite(bezSprite) ;
+
+
+			
+			rHelper.drawCircle(orbitor.x,orbitor.y,4)
+			orbitor.path.debug	=	true ;
+			orbitor.path.Render(rHelper)
+			
+			rHelper.setOverlay(MAPOVERLAY-1) ;
+			rHelper.drawSprite(jeepSpr) ;
+			
+			
+			drawTextAlignmentTest(rHelper)
+
+
+			// Draw Hotspots
+			for (var hsIdx in hotSpots) 
+			{
+				var hs 	=	hotSpots[hsIdx] ;
+				hs.Render(rHelper)
+			}
+			
+			
+	//		rHelper.drawPoly([100,100,160,100,130,180])
+	//		rHelper.drawLine(0,0,320,460) ;
+			bez.render(rHelper) ;
+			MessageManager.Render(rHelper)
+
+			
+			AnimationManager.Render(rHelper) ;
+			
+
+		}
+		
+		function drawTextAlignmentTest(rHelper)
+		{
+			
+			var	testColour	=	"#00FF00" ;
+			rHelper.drawText("HELLO BOTTOM RIGHT JUSTIFY",DISPLAYWIDTH,DISPLAYHEIGHT,testColour,{vertical:"bottom",horizontal:"right"});
+			rHelper.drawText("HELLO TOP LEFT JUSTIFY",0,0,testColour,{vertical:"top",horizontal:"left"});
+			rHelper.drawText("HELLO MIDDLE,CENTRE(CENTER) JUSTIFY",DISPLAYWIDTH/2,DISPLAYHEIGHT/2,testColour,{vertical:"middle",horizontal:"center"});
+		}
+	
+		function tests()
+		{
+			var darg = function(val,defval) { return (typeof(val) === 'undefined' || typeof(val) !== typeof(defval) ? defval : val) ; }
+			
+			var v1	=	Vector4.Create(1,0,0,0) ;
+			var v2	=	Vector4.Create(0,1,0) ;
+			var tmp	=	Vector4.Create() ;
+			tmp.Cross(tmp,v1,v2)
+		}
+		
+		
+		document.getElementById("c1").onmousedown = function( e ) 
+			{ 
+				console.log( e ) ; 
+			}
+		window.addEventListener('keydown',doKeyDown,true);
+		
+
+	requestAnimFrame(update) ;
+	}) ;
+	</script>
+
+
+	<script type="text/javascript">
+
+	
+		var executeGame2 = (function()
+		{
+			var numSprites		=	8 ;
+			var DISPLAYWIDTH 	=	document.getElementById('canvasBuffer1').width ;
+			var DISPLAYHEIGHT 	=	document.getElementById('canvasBuffer1').height ;
+			var sprImage		=	new ImageResource("cute.png").getImage() ;
+			
+			var radius			=	200 ;
+			var totalTime		=	0 ;
+			var gTime			=	0 ;
+			var now,dtSamples	=	0 ;	
+			var lastTime		=	new Date().getTime()  ;
+			var	ctx				=	document.getElementById("canvasBuffer1").getContext("2d") ;
+			var llist			=	new LinkedList() ;
+			document.getElementById("canvasBuffer1").style.display = "" ;
+
+		//	Vector4.Test() ;
+			update() ;
+			
+			function TestLinkedList()
+			{
+				
+							if (true)
+							{
+								var el1 = llist.Add("Hello") ;
+								var el2 = llist.Add("World") ;
+								var el3 = llist.Add("I") ;
+								var el4 = llist.Add("Hope") ;
+								var el5 = llist.Add("This") ;
+								var el6 = llist.Add("Works") ;
+							} else
+							{
+								llist.AddArray(
+										[
+											"Hello","World","I","Really","Hope","This","Works"
+										]
+									) ;
+							}
+
+							var arr = llist.toArray(true) ;
+
+							alert("ARRAY "+arr.length) ;
+							for (var idx = 0 ; idx < arr.length ; idx++)
+							{
+								alert("IDX "+idx+" = "+arr[idx])
+							}
+
+
+				//			llist.Remove(el6) ;
+				//			llist.Remove(el3) ;
+				//			llist.Remove(el1) ;
+				//			llist.Remove(el2) ;
+				//			llist.Remove(el5) ;
+				//			llist.Clear() ;
+
+							var it 	=	llist.Iterator() ;
+							var it2	=	llist.Iterator(true) ;
+
+							for ( ; it.HasElements() ; it.Next())
+							{
+								alert(it.GetCurrent().GetData()) ;
+
+							}
+							if (it.HasElements()) {
+								alert(it.GetCurrent().GetData()) ;
+							} else
+							{
+								it.Reset() ;
+								if (it.HasElements()) 
+								{
+									alert("RESET "+(it.GetCurrent() ? it.GetCurrent().GetData() : "null")) ;
+								}
+
+							}
+
+							for ( ; it2.HasElements() ; it2.Next())
+							{
+								alert(it2.GetCurrent()) ;
+
+							}
+
+			}
+
+			function update()
+			{
+				now				=	new Date().getTime() ;
+				var timeDiff 	= 	now - lastTime ;
+				lastTime		=	now ;
+				totalTime		=	totalTime + timeDiff ;		// total time in milliseconds
+
+				dtSamples++ ;
+				var avDT			=	(totalTime / dtSamples)/1000 ;
+				
+				gTime				=	gTime + (avDT) ;
+
+				var freq			=	6*0.5 ;
+
+
+				var sps = function() {
+					var pos				=	[] ;
+				
+					for (var i = 0 ; i < numSprites; i++)
+					{
+						var phase			=	(i - numSprites*0.5)*6/numSprites ;
+						var posx			=	DISPLAYWIDTH*0.5+radius*Math.sin(gTime*freq+phase) ;
+						var	posy			=	DISPLAYHEIGHT*0.5+radius*Math.cos(gTime*freq+phase) ;
+						pos[i] 				=	{x:posx,y:posy} ;
+					}
+					return pos ;
+				}() ;
+
+				ctx.clearRect(0, 0, DISPLAYWIDTH, DISPLAYHEIGHT);
+				
+				for (var idx in sps) {
+					var pos	=	sps[idx] ;
+					ctx.drawImage(sprImage,pos.x,pos.y) ;
+				}
+				ctx.textAlign	=	"left"
+				ctx.fillText("time:"+parseInt(gTime)+":"+parseInt(totalTime/1000)+" plays: "+lplayed.plays+" time: "+lplayed.date,100,100) ;
+				
+				requestAnimFrame(update) ;
+
+			}
+			
+			
+			
+		}) ;
+
+	</script>
+
+</html>
+

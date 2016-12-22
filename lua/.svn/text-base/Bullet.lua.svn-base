@@ -1,0 +1,216 @@
+-- @header
+if (not Bullet) then
+Bullet = {}
+Bullet.className 			= "Bullet"
+Bullet.RADIUS	 			= 	4
+Bullet.debug                =   false
+Bullet.EXPLODEOFFSETX		=	0
+Bullet.EXPLODEOFFSETY		=	0
+Bullet.EXPLODEOFFSETZ		=	0
+
+	function Bullet.Create()
+		local bullet = {
+			prev 		=	nil,
+			x,y,z		=	0,0,0,
+			radius		=	Bullet.RADIUS,
+			nxt 		=	nil,
+			owner		=	nil,
+			animation	=	nil,
+			className = Bullet.className,
+    	}
+
+		setmetatable(bullet,{ __index = Bullet })
+		return bullet
+	end
+
+	function Bullet.GetCollisionObject(bullet)
+		return { x = bullet.x, y = bullet.y, z = bullet.z, radius = bullet.radius, className='BulletCollisionObject'}
+	end
+
+    function Bullet.GetExplodeOffset(bullet)
+        return  {ox = Bullet.EXPLODEOFFSETX, oy = Bullet.EXPLODEOFFSETY, oz = Bullet.EXPLODEOFFSETZ}
+    end
+
+	function Bullet.ApplyAnimation(bullet,animation)
+		bullet.animation = animation
+	end
+
+
+	function Bullet.Init(bullet,owner,damage,x,y,vel,angle,dur,animation,scale,radius)
+
+		local foffset = (owner:GetFiringOffset()) -- or ({ox = 0, oy = 0, oz = 0})
+--		Logger.lprint(owner.className.." fired offsets "..foffset.ox..","..foffset.oy..","..foffset.oz)
+		
+		bullet.rangle		=	math.rad(angle)
+		bullet.x			= 	x + foffset.ox
+		bullet.y			= 	y + foffset.oy
+        bullet.z    		= 	0 + foffset.oz
+		bullet.cx			= 	bullet.x
+		bullet.cy			= 	bullet.y
+        bullet.time			= 	0
+
+        bullet.strength     =   100
+
+        bullet.initialVel	= 	vel
+    	bullet.angle		=	angle
+		bullet.life			=	dur  or 4
+		bullet.gravity		=	Constants.PARTICLEGRAVITY
+		bullet.owner		=	owner
+		bullet.animation	=	animation
+		bullet.scale		=	scale or 1
+        bullet.yvel         =   -vel * math.cos(bullet.rangle)
+        bullet.xvel         =   vel * math.sin(bullet.rangle)
+
+		bullet.damage		=	damage	or 10
+        bullet.droptime     =   0
+		bullet.radius		=	radius or Bullet.RADIUS
+	   -- Logger.lprint("Bullet.Init life = "..""..bullet.life.." angle="..bullet.angle)
+	
+	
+		if (animation and animation.anim) then
+			bullet.anim,bullet.sprite  = animation.anim,animation.sprite
+			--assert(false,bullet.anim.className)
+		else
+			bullet.anim,bullet.sprite  = RenderHelper.CreateTextureAnimation(2,1,"bullets",10)
+		end
+		
+		if (bullet.anim) then
+			TextureAnim.Play(bullet.anim)
+		end
+    end
+
+	function Bullet.ApplyDamage(bullet,damage)
+		-- Bullet has hit something
+
+        bullet.strength = bullet.strength - (damage or 0)
+
+        if (not damage or bullet.strength < 0) then
+          Bullet.Explode(bullet)
+          BulletManager.ReleaseBullet(bullet)
+        end
+
+	end
+
+
+
+	function Bullet.Render(bullet,renderHelper)
+		local uvs =	bullet.anim:GetRenderTexture().uvs
+		Sprite.SetUvs(bullet.sprite,
+			uvs.tlu,uvs.tlv,
+			uvs.blu,uvs.blv,
+			uvs.bru,uvs.brv,
+			uvs.tru,uvs.trv
+		)
+		RenderHelper.DrawSprite(renderHelper,bullet.sprite,bullet.x,bullet.y,1,-bullet.angle)
+	end
+
+	function Bullet.XRender(bullet,renderHelper)
+	 	RenderHelper.DrawCircle(renderHelper,bullet.x,bullet.y,Bullet.RADIUS)
+	end
+
+--	function Bullet.RenderXY(bullet,renderHelper,x,y)
+--	 	RenderHelper.DrawCircle(renderHelper,x,y,Bullet.RADIUS/2)
+--	end
+	
+	
+	
+	function Bullet.RenderOLD(bullet,renderHelper)
+		CollisionObject.Render(Bullet.GetCollisionObject(bullet),renderHelper)
+		local animation = bullet.animation
+		if (animation) then
+			local textureid =	animation:GetRenderTexture().textureid
+			local sprite 	=	Sprite.Create()
+			Sprite.SetTexture(sprite,RenderHelper.TextureFind(textureid))
+			RenderHelper.DrawSprite(renderHelper,sprite,bullet.x,bullet.y,bullet.scale)
+		else
+            if (Bullet.debug) then
+			 RenderHelper.DrawCircle(renderHelper,bullet.x,bullet.y,Bullet.RADIUS)
+            end
+		end
+		CollisionRect.DrawCollision(renderHelper,bullet)
+		
+  	end
+	
+	function Bullet.Update(bullet,dt,player)
+		bullet.time = bullet.time + dt 
+        local dx = dt*bullet.xvel
+		local dy = dt*bullet.yvel 
+
+		-- Limit movement just in case we get an outlier DT
+		local maxy	=  64
+
+		bullet.x = bullet.x + dx
+		bullet.y = bullet.y + dy
+        
+		if (bullet.anim) then
+			bullet.anim:Update(dt)
+		end
+	
+		if (bullet.owner.className == 'Player') then
+			-- Check Player v Enemy
+			--local enemy = EnemyManager.IsCollidingInPolygon(bullet.x,bullet.y,0)
+			local bx,by		=	bullet.x,bullet.y
+			local enemy = EnemyManager.IsColliding(bx,by,0)
+			if (enemy) then
+				enemy:ApplyDamage(bullet.damage)
+				Bullet.ApplyDamage(bullet,300)
+			end
+		else
+			if (player and player:IsColliding(bullet.x,bullet.y,0)) then
+				player:ApplyDamage(bullet.damage)
+				Bullet.ApplyDamage(bullet,300)
+			end
+		end
+		
+
+   		--     if (bullet.owner.className == 'Player' and bullet.time > bullet.droptime) then
+    	--		ParticleManager.Drop(bullet.owner,bullet.x,bullet.y,bullet.z,2,1)
+      	--      bullet.droptime = bullet.time + 0.03
+     	--   end
+	
+		
+    end
+
+	function Bullet.GetPosition(bullet)
+		return bullet.x,bullet.y,bullet.z
+	end
+	
+	function Bullet.GetTimeLivedFor(bullet)
+		return bullet.time 
+	end
+
+	function Bullet.IsAlive(bullet)
+        return not Bullet.IsFree(bullet)
+    end
+
+    function Bullet.GetX(bullet)
+        return bullet.x
+    end
+
+    function Bullet.GetY(bullet)
+        return bullet.y
+    end
+
+    function Bullet.GetZ(bullet)
+        return bullet.z
+    end
+
+    function Bullet.GetType(bullet)
+        return (bullet.owner and bullet.owner.className) or 'UNKNOWNBULLETTYPE'
+    end
+
+	function Bullet.IsFree(bullet)
+		return (bullet.time > bullet.life)  
+	end
+
+
+    function Bullet.Explode(bullet)
+       -- if (bullet.owner.className == 'Player') then
+            	local expo = Bullet.GetExplodeOffset(bullet)
+				local anim,spr	=	RenderHelper.CreateTextureAnimation(4,2,"bullethits",10)
+		    	ExplosionManager.AddExplosion({x = bullet.x+expo.ox, y = bullet.y + expo.oy , z = bullet.z + expo.oz, efx = Explosion.PLAYERBULLETEFX},anim,spr)
+       -- end
+    end
+
+
+end

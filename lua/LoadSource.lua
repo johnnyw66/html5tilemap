@@ -1,0 +1,101 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+
+LuaSource		=	{
+	"Constants",
+	"FontDefs",
+	"Locale",
+	"Temp",
+	"RenderHelper",
+	"Polygon",
+	"CollideCircle",
+	"CollidePolygon",
+	"SingletonTileMap",
+	"TextureAnim",
+	"PlayerHelicopter",
+	"LandDynamics",
+	"SimpleLandDynamics",
+	"Vehicle",
+	"PlayerLandVehicle",
+	"Camera",
+	"Path",
+	"Vector2",
+	"Bezier",
+	"BezierLU",
+	"Spline",
+	"Shape",
+--	"Turret",
+	"Enemy",
+	"MapReader",
+	"Radar",
+	"EnemyManager",
+	"Mission",
+	"MissionManager",
+	"Trigger",
+	"TriggerManager",
+	"Line2D",
+	"HomingMissile",
+	"Missile",
+	"MissileManager",
+	"Bullet",
+	"BulletManager",
+	"Pickup",
+	"PickupManager",
+	"Event",
+	"SingleShotEvent",
+	"SoundFadeEvent",
+	"EventManager",
+	"EventChooser",
+	"Ktimer",
+	"KDampedOscillator",
+	"Spring",
+	"SpringBox",
+	"MenuBoard",
+--	"Menu",
+--	"MenuCommandOption",
+--	"MenuOptions",
+--	"MenuManager",
+	"DisplayableAnimation",
+	"DisplayableImage",
+	"DisplayableText",
+	"DisplayableTextWithImage",
+	"Message",
+	"MessageManager",
+	"ScoreManager",
+	"RenegadeScoreRequest",
+--	"ResponseCurve",
+--	"Set",
+	"StateMachine",
+	"Interpolate",
+	"SoundPlayer",
+	"SoundManager",
+	"WorldClock",
+	"Heart",
+	"Explosion",
+	"Easter",
+	"Levels",
+	"Hud",	
+	"Particle",
+	"ParticleManager",
+	"EnemyData",
+	"EnemyPart",
+	"TextureParticle",
+	"FormatText",
+	"CameraOrbitor",
+	"AssetLoader",
+	"Util",
+
+}
+
+	function LoadSourceFiles(source)
+	
+		for	_,assetName in pairs(source or LuaSource) do
+			Logger.lprint("Resource.Run "..assetName)
+			Resource.Run(assetName)
+			Resource.Release(Resource.Find(assetName))
+		end
+		
+	end
+
+
+LoadSourceFiles()
+

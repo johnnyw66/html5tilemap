@@ -1,0 +1,234 @@
+-- @header
+if not Levels then
+Levels		=	{}
+
+
+Resource.Run("LevelNames")
+
+Levels.Instructions	=	
+{
+	"LOVE2D INSTRUCTIONS",
+	"",
+	"LEFT PADDLE or DPAD- MOVEMENT DIRECTION",
+	"RIGHT PADDLE - FIRING DIRECTION",
+	"{'o','p'} - RIGHT JOY_X (RIGHT PADDLE)",
+	"{'q','a'} - RIGHT JOY_Y (RIGHT PADDLE)",
+	"L1 or X or 'x' - BULLETS",
+	"L2 or CIRCLE or 'r' - MISSILES",
+	"R2 - '4' TOGGLE DEBUG",
+	"TRIANGLE 'y' - FLARE",
+	
+}
+
+
+Levels.currentChoiceIndex	=	1
+Levels.choiceStr			=	" <<"
+local	time				=	0
+
+
+
+Levels.currentChoiceIndex	=	1
+Levels.choiceStr			=	"<<<<<<"
+
+
+Levels.levels	=	{
+	{name = "MISSION1",complete = false,score = 0,levelscore=0},
+	{name = "MISSION2",complete = false,score = 0,levelscore=0},
+	{name = "MISSION3",complete = false,score = 0,levelscore=0},
+	{name = "MISSION4",complete = false,score = 0,levelscore=0},
+	{name = "MISSION5",complete = false,score = 0,levelscore=0},
+	{name = "MISSION6",complete = false,score = 0,levelscore=0},
+	{name = "MISSION7",complete = false,score = 0,levelscore=0},
+	{name = "MISSION8",complete = false,score = 0,levelscore=0},
+	{name = "MISSION9",complete = false,score = 0,levelscore=0},
+	{name = "MISSION10",complete = false,score = 0,levelscore=0},
+	{name = "MISSION11",complete = false,score = 0,levelscore=0},
+	{name = "MISSION12",complete = false,score = 0,levelscore=0},
+	{name = "MISSION13",complete = false,score = 0,levelscore=0},
+	{name = "MISSION14",complete = false,score = 0,levelscore=0},
+	{name = "MISSION15",complete = false,score = 0,levelscore=0},
+
+}
+
+Levels.currentLevelIndex	=	1
+--TODO remove
+function Levels.Init()
+--	Levels.ResetAll()
+	Levels.MenuInit()
+end
+
+
+function Levels.AllLevelsCompleted()
+	for _,lvlinfo in pairs(Levels.levels) do
+		if (not lvlinfo.complete) then
+			return false
+		end
+	end
+	return true
+end
+
+
+
+-- TODO
+function Levels.ResetAll()
+	Levels.currentLevelIndex	=	1
+	for _,lvlinfo in pairs(Levels.levels) do
+		lvlinfo.complete	= false
+		lvlinfo.score		= 0
+	end
+end
+
+function Levels.LevelComplete(lvlindex,score)
+	local lvl = Levels.levels[lvlindex or Levels.currentLevelIndex]
+	lvl.complete	=	true
+	if (score) then
+		lvl.score		=	score
+	end
+	Levels.NextLevel()
+end
+
+function Levels.LevelFailed(lvlindex,score)
+	local lvl = Levels.levels[lvlindex or Levels.currentLevelIndex]
+	lvl.complete	=	false
+	if (score) then
+		lvl.score		=	score
+	end
+end
+
+
+function Levels.NextLevel()
+	if (Levels.currentLevelIndex < #Levels.levels) then
+		Levels.currentLevelIndex	=	Levels.currentLevelIndex	+	1
+	end
+end
+
+function Levels.GetCurrentLevelName()
+	local lvl = Levels.levels[Levels.currentLevelIndex]
+	return lvl.name
+end
+
+function Levels.GetCurrentLevelNameAndIndex()
+	local lvl = Levels.levels[Levels.currentLevelIndex]
+	return Levels.GetCurrentLevelName(),Levels.currentLevelIndex
+end
+
+
+
+-- DEMO MENU STUFF BELOW
+
+function Levels.GetLevelChoiceString()
+	return Levels.Names[Levels.currentChoiceIndex]
+end
+
+
+function Levels._GetLevelName(levelNum)
+	return Levels.Names[levelNum]
+end
+
+function Levels.MenuInit()
+	Levels.ResetTimeOutTimer()
+end
+
+function Levels.Select()
+
+end
+
+function Levels.ResetTimeOutTimer()
+	time	=	0
+end
+
+function Levels.TimedOut(tout)
+	return (time	>	(tout or 3000))
+end
+
+function Levels.Down()
+	if (Levels.currentChoiceIndex == #Levels.Names) then
+		Levels.currentChoiceIndex = 1
+	else
+		Levels.currentChoiceIndex	=	Levels.currentChoiceIndex  + 1
+	end
+	Levels.ResetTimeOutTimer()
+end
+
+function Levels.Up()
+	if (Levels.currentChoiceIndex == 1) then
+		Levels.currentChoiceIndex = #Levels.Names
+	else
+		Levels.currentChoiceIndex	=	Levels.currentChoiceIndex  - 1
+	end
+	Levels.ResetTimeOutTimer()
+end
+
+function Levels.Update(dt)
+	time	=	time + dt
+
+end
+
+function Levels.Render(renderHelper)
+
+	if (@TESTMENU@) then
+		Levels.RenderLevelChoice(renderHelper)
+		Levels.RenderInstructions(renderHelper)
+	else
+		if (not @RELEASE@) then
+			Levels.RenderCurrent(renderHelper)
+		end
+		Levels.RenderPrompt(renderHelper)
+	end
+	
+
+end
+
+function Levels.RenderCurrent(renderHelper)
+	RenderHelper.SetColour(renderHelper,{255,0,0,255})
+	RenderHelper.SetFont(renderHelper,FONT_LEVELS)
+
+	local cLvlName,cLvlIndex 	=	Levels.GetCurrentLevelNameAndIndex()
+	local fh					=	20
+	local xpos					=	512
+	local ypos					=	680
+	local infoStr				=	string.format("CURRENT LEVEL %s INDEX%d",cLvlName,cLvlIndex)
+	RenderHelper.DrawText(renderHelper,infoStr,xpos,ypos,1,{red=127,green=0,blue=127,alpha=127},"center")
+end
+
+
+function Levels.RenderPrompt(renderHelper)
+	RenderHelper.SetColour(renderHelper,{255,0,0,255})
+	RenderHelper.SetFont(renderHelper,FONT_LEVELS)
+	local xpos,ypos	=	512,80
+	RenderHelper.DrawText(renderHelper,Locale.GetLocaleText("PRESS [SELECT] TO PLAY NEXT LEVEL"),xpos,ypos,2,{red=127,green=0,blue=127,alpha=127},"center")
+end
+
+function Levels.RenderInstructions(renderHelper)
+	local XINS	=	700
+	local YINS	=	80
+
+	RenderHelper.SetFont(renderHelper,FONT_LEVELS)
+	local fh	=	1.5*RenderHelper.GetFontHeight(renderHelper)
+
+	for idx,line in pairs(Levels.Instructions) do
+		RenderHelper.DrawText(renderHelper,line,XINS,YINS + fh*idx,1,{red=127,green=60,blue=0,alpha=127},"left")
+	end
+end
+
+
+function Levels.RenderLevelChoice(renderHelper)
+
+	RenderHelper.SetColour(renderHelper,{255,0,0,255})
+	RenderHelper.SetFont(renderHelper,FONT_LEVELS)
+	
+	local fh	=	1.5*RenderHelper.GetFontHeight(renderHelper)
+	local xpos	=	400
+	local ypos	=	200
+	
+	for idx,lName in pairs(Levels.Names) do
+		local appStr	=	idx == Levels.currentChoiceIndex and Levels.choiceStr or ""
+		RenderHelper.DrawText(renderHelper,lName..appStr,xpos,ypos + fh*idx,1,{red=127,green=0,blue=127,alpha=127},"left")
+	end
+
+	local cchoice 	=	Levels.Names[Levels.currentChoiceIndex]
+	RenderHelper.DrawText(renderHelper,cchoice,10,80,1,{red=127,green=0,blue=127,alpha=127},"left")
+
+end
+	
+end

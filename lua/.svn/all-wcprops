@@ -1,0 +1,539 @@
+K 25
+svn:wc:ra_dav:version-url
+V 27
+/javascript/!svn/ver/94/lua
+END
+Locale.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Locale.lua
+END
+MissileManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/37/lua/MissileManager.lua
+END
+Shape.lua
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/javascript/!svn/ver/37/lua/Shape.lua
+END
+WorldClock.lua
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/javascript/!svn/ver/37/lua/WorldClock.lua
+END
+EnemyPart.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/EnemyPart.lua
+END
+StateMachine.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/StateMachine.lua
+END
+LandDynamics.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/LandDynamics.lua
+END
+EnemyManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/EnemyManager.lua
+END
+QuadHotspot.lua
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/javascript/!svn/ver/1/lua/QuadHotspot.lua
+END
+PlayerHelicopter.lua
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/javascript/!svn/ver/37/lua/PlayerHelicopter.lua
+END
+SpringBox.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/SpringBox.lua
+END
+Line2D.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Line2D.lua
+END
+Bezier.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Bezier.lua
+END
+Hud.lua
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/javascript/!svn/ver/37/lua/Hud.lua
+END
+Event.lua
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/javascript/!svn/ver/1/lua/Event.lua
+END
+Easter.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Easter.lua
+END
+Vector2.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/37/lua/Vector2.lua
+END
+PickupManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/javascript/!svn/ver/37/lua/PickupManager.lua
+END
+Vector4.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/1/lua/Vector4.lua
+END
+Polygon.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/1/lua/Polygon.lua
+END
+Bullet.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Bullet.lua
+END
+Spline.lua
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/javascript/!svn/ver/1/lua/Spline.lua
+END
+LocaleKeys.lua
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/javascript/!svn/ver/37/lua/LocaleKeys.lua
+END
+Path.lua
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/javascript/!svn/ver/37/lua/Path.lua
+END
+CollideCircle.lua
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/javascript/!svn/ver/37/lua/CollideCircle.lua
+END
+Particle.lua
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/javascript/!svn/ver/37/lua/Particle.lua
+END
+Heart.lua
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/javascript/!svn/ver/37/lua/Heart.lua
+END
+AssetLoader.lua
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/javascript/!svn/ver/37/lua/AssetLoader.lua
+END
+EnemyData.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/EnemyData.lua
+END
+FontDefs.lua
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/javascript/!svn/ver/37/lua/FontDefs.lua
+END
+Matrix44.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/1/lua/Matrix44.lua
+END
+EventManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/javascript/!svn/ver/1/lua/EventManager.lua
+END
+SingletonTileMap.lua
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/javascript/!svn/ver/1/lua/SingletonTileMap.lua
+END
+Logger.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Logger.lua
+END
+RenegadeScoreRequest.lua
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/javascript/!svn/ver/37/lua/RenegadeScoreRequest.lua
+END
+SimpleLandDynamics.lua
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/javascript/!svn/ver/37/lua/SimpleLandDynamics.lua
+END
+CollidePolygon.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/37/lua/CollidePolygon.lua
+END
+SoundManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/SoundManager.lua
+END
+Message.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/37/lua/Message.lua
+END
+TextureParticle.lua
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/javascript/!svn/ver/37/lua/TextureParticle.lua
+END
+main.lua
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/javascript/!svn/ver/37/lua/main.lua
+END
+header.txt
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/header.txt
+END
+Radar.lua
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/javascript/!svn/ver/37/lua/Radar.lua
+END
+ObserverEvent.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/1/lua/ObserverEvent.lua
+END
+LoadLibs.lua
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/javascript/!svn/ver/37/lua/LoadLibs.lua
+END
+Levels.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Levels.lua
+END
+Pickup.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Pickup.lua
+END
+DisplayableText.lua
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/javascript/!svn/ver/37/lua/DisplayableText.lua
+END
+TriggerManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/37/lua/TriggerManager.lua
+END
+LoadSource.lua
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/javascript/!svn/ver/37/lua/LoadSource.lua
+END
+KDampedOscillator.lua
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/javascript/!svn/ver/37/lua/KDampedOscillator.lua
+END
+Temp.lua
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/javascript/!svn/ver/37/lua/Temp.lua
+END
+ScoreManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/ScoreManager.lua
+END
+Game.lua
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/javascript/!svn/ver/37/lua/Game.lua
+END
+SoundFadeEvent.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/37/lua/SoundFadeEvent.lua
+END
+RenderHelper.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/RenderHelper.lua
+END
+Vehicle.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/37/lua/Vehicle.lua
+END
+Explosion.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/Explosion.lua
+END
+Mission.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/37/lua/Mission.lua
+END
+Camera.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/35/lua/Camera.lua
+END
+CameraOrbitor.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/1/lua/CameraOrbitor.lua
+END
+Ktimer.lua
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/javascript/!svn/ver/37/lua/Ktimer.lua
+END
+MapReader.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/MapReader.lua
+END
+Spring.lua
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/javascript/!svn/ver/1/lua/Spring.lua
+END
+Trigger.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/37/lua/Trigger.lua
+END
+EventChooser.lua
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/javascript/!svn/ver/37/lua/EventChooser.lua
+END
+Missile.lua
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/javascript/!svn/ver/37/lua/Missile.lua
+END
+SoundPlayer.lua
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/javascript/!svn/ver/37/lua/SoundPlayer.lua
+END
+TextureAnim.lua
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/javascript/!svn/ver/37/lua/TextureAnim.lua
+END
+AssetLoaderTest.lua
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/javascript/!svn/ver/37/lua/AssetLoaderTest.lua
+END
+HomingMissile.lua
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/javascript/!svn/ver/37/lua/HomingMissile.lua
+END
+MissionManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/37/lua/MissionManager.lua
+END
+MenuBoard.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/MenuBoard.lua
+END
+Constants.lua
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/javascript/!svn/ver/37/lua/Constants.lua
+END
+Enemy.lua
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/javascript/!svn/ver/37/lua/Enemy.lua
+END
+Util.lua
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/javascript/!svn/ver/37/lua/Util.lua
+END
+MessageManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/37/lua/MessageManager.lua
+END
+BezierLU.lua
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/javascript/!svn/ver/37/lua/BezierLU.lua
+END
+SingleShotEvent.lua
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/javascript/!svn/ver/1/lua/SingleShotEvent.lua
+END
+BulletManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/javascript/!svn/ver/37/lua/BulletManager.lua
+END
+Interpolate.lua
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/javascript/!svn/ver/37/lua/Interpolate.lua
+END
+LEVEL_JUNGLE1 copy.lua
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/javascript/!svn/ver/94/lua/LEVEL_JUNGLE1%20copy.lua
+END
+DisplayableAnimation.lua
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/javascript/!svn/ver/37/lua/DisplayableAnimation.lua
+END
+PlayerLandVehicle.lua
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/javascript/!svn/ver/37/lua/PlayerLandVehicle.lua
+END
+LevelNames.lua
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/javascript/!svn/ver/37/lua/LevelNames.lua
+END
+DisplayableImage.lua
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/javascript/!svn/ver/37/lua/DisplayableImage.lua
+END
+DisplayableTextWithImage.lua
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/javascript/!svn/ver/37/lua/DisplayableTextWithImage.lua
+END
+FormatText.lua
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/javascript/!svn/ver/37/lua/FormatText.lua
+END
+ParticleManager.lua
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/javascript/!svn/ver/37/lua/ParticleManager.lua
+END

@@ -1,0 +1,326 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <style>
+            body {
+                margin: 0px;
+                padding: 0px;
+            }
+			
+			.hide_canvas { display: none;}
+			
+            
+            #canvasBuffer3 {
+                border: 1px solid black;
+			     width: 640px;
+			     height:426px;
+				 style.background-color:"#FF0000" ;
+				 style.position: "fixed";
+
+            }
+            
+            #canvasBuffer4 {
+                border: 1px solid black;
+			     width: 640px;
+			     height:426px;
+				 style.background-color:"#FF0000" ;
+				 style.position: "fixed";
+
+            }
+
+			#c1 {
+			     width: 1024px;
+			     height:640px;
+			     margin: 0px auto;
+			     border: 1px solid white;
+				 style.position: "fixed";
+				
+			   }
+
+
+        </style>
+
+		<script type="text/javascript" src="lib_js/jkw_all-libs-min.js"></script>
+		<script type="text/javascript" src="lib_js/modernizr.custom.js"></script>
+
+		<script>
+		if ((!Modernizr.canvas) || (!Modernizr.localstorage))
+		{
+			alert("SORRY! YOU NEED A WEB BROWSER WHICH SUPPORTS HTML5 canvas and localStorage.")
+
+			if (!Modernizr.localstorage) {
+				throw "no localstorage." ;
+			}
+
+			if (!Modernizr.canvas) {
+				throw "no canvas." ;
+			}
+
+		}
+
+		// add two new functions to localStorage - allowing us to 
+		// serialize stored 'objects'
+
+		Storage.prototype.setObject = function(key, value) {
+	    	this.setItem(key, JSON.stringify(value));
+		}
+
+		Storage.prototype.getObject = function(key) {
+	    	var value = this.getItem(key);
+	    	return value && JSON.parse(value);
+		}
+
+		var	lplayed 			=	localStorage.getObject("lastplayed") ;
+
+		
+		var storePlayInfo = function(gameid)
+		{
+			// Update and Store info on play time.
+		
+			var nTime			=	new Date().getTime() ;
+		
+			if (lplayed) {
+				lplayed.plays		=	lplayed.plays + 1 ;
+				lplayed.date		=	nTime ;
+			} else
+			{
+				lplayed				=	{ plays:0,date:nTime}
+			}
+		
+			localStorage.setObject("lastplayed",lplayed) ;
+		}
+		
+		// Create requestAnimFrame function callback - depending
+		// on the browser we are using.
+		
+		var	requestAnimFrame	=	
+		(function(){
+		      return  window.requestAnimationFrame       || 
+		              window.webkitRequestAnimationFrame || 
+		              window.mozRequestAnimationFrame    || 
+		              window.oRequestAnimationFrame      || 
+		              window.msRequestAnimationFrame     || 
+		              function( callback ){
+		                window.setTimeout(callback, 1000 / 60);
+		              };
+		    })();
+			var preLoadAndRun = function()
+					{
+						var	games	=	[
+								{	func: 	executeIntro,
+									param:	[
+										"* Basic 2D API - (my first attempt with HTML 5, Javascript)",
+										"* 16 Render Layers, each with own Camera Rendering Properties",
+										"* Hotspot, Animation, Event and TileMap Managers",
+										"* TileMap produced using DAME editor",
+										"* Spline and Vector Paths",
+										"* Sprite Animation - Sprite 'Sheets' or individual frames",
+										" ",
+										" ",
+										"email: John Wilson junk66@talk21.com, ph: 07900 495984/01273 808443"
+									]
+								},
+
+								executeGame3,
+
+								{	func: 	executeIntro,
+									param:	[
+										"* Javascript demo - Approx 2.5 Weeks work",
+										"* Based on orignal code I wrote in Lua",
+										"* Tilemap and level produced using DAME Editor",
+										"* DAME produces Vector and Spline Paths",
+										"* 2D Render API supports multi-layer rendering",
+										"* Animation and Event Managers",
+										"* Hotspot and Trigger Managers ",
+										" ",
+										" ",
+										"email: John Wilson junk66@talk21.com, ph: 07900 495984/01273 808443"
+										]
+								},
+
+								executeGame3,
+								
+			
+						] ;
+
+						//alert("Preload Test")
+						if (ImageResource.isLoaded()) 
+						{
+							var cbF	=	games[lplayed.plays % games.length] ;
+							if (typeof cbF == 'function')
+							{
+								cbF(KeyBoardHandlerSetup(),-1) ;
+							} else
+							{	
+								cbF.func(KeyBoardHandlerSetup(),cbF.param) ;
+							}
+
+						} else {
+
+							window.setTimeout(preLoadAndRun,10);
+						}
+						
+			}
+			
+            window.onload = function(){
+				storePlayInfo() ;
+				new ImageResource("enemy_missile__1","assets/gfx/enemy_missile__1.png") ;
+				new ImageResource("enemy_missile__2","assets/gfx/enemy_missile__2.png") ;
+				new ImageResource("enemy_missile__3","assets/gfx/enemy_missile__3.png") ;
+				
+				new ImageResource("arrow","assets/gfx/arrow.png") ;
+
+				new ImageResource("radarbase2","assets/gfx/radarbase2.png") ;
+				new ImageResource("radar6","assets/gfx/radar6.png") ;
+
+				new ImageResource("house3","assets/gfx/house3.png") ;
+				new ImageResource("outhouse4","assets/gfx/outhouse4.png") ;
+				new ImageResource("hut5","assets/gfx/hut5.png") ;
+
+				new ImageResource("tankbottom6","assets/gfx/tankbottom6.png") ;
+				new ImageResource("tanktop6","assets/gfx/tanktop6.png") ;
+
+				new ImageResource("smalljeep6","assets/gfx/smalljeep6.png") ;
+				new ImageResource("smalljeepgun6","assets/gfx/smalljeepgun6.png") ;
+
+				new ImageResource("largejeep2","assets/gfx/largejeep2.png") ;
+				new ImageResource("largejeeptop2","assets/gfx/largejeeptop2.png") ;
+
+				new ImageResource("bullethits","assets/gfx/bullethits.png") ;
+				new ImageResource("bullets_land","assets/gfx/bullets_land.png") ;
+				new ImageResource("bullets","assets/gfx/bullets.png") ;
+
+				new ImageResource("enemy_helishadow","assets/gfx/helishadow.png") ;
+				new ImageResource("enemy_helibody","assets/gfx/helibody.png") ;
+				new ImageResource("enemy_heliblades","assets/gfx/heliblades.png") ;
+
+				new ImageResource("helibody","assets/gfx/helibody.png") ;
+				new ImageResource("heliblades","assets/gfx/heliblades.png") ;
+				new ImageResource("helishadow","assets/gfx/helishadow.png") ;
+				
+				new ImageResource("enemyflyingbody","assets/gfx/enemy_helibody.png") ;
+				new ImageResource("enemyflyingblades","assets/gfx/enemy_heliblades.png") ;
+				
+				new ImageResource("HeliLand01.png","assets/gfx/HeliLand01.png") ;
+				new ImageResource("cute.png","assets/gfx/cute.png") ;
+				new ImageResource("explosionuv64.png","assets/gfx/explosionuv64.png") ;
+				new ImageResource("jeep.png","assets/gfx/jeep.png") ;
+				new ImageResource("messagebackground.png","assets/gfx/messagebackground.png") ;
+				new ImageResource("person.png","assets/gfx/person.png") ;
+				new ImageResource("smoke8x4.png","assets/gfx/smoke8x4.png") ;
+				new ImageResource("smoke_loop.png","assets/gfx/smoke_loop.png") ;
+				new ImageResource("tileset1.png","assets/gfx/tileset1.png") ;
+				new ImageResource("tileset.png","assets/gfx/tileset.png") ;
+				
+				preLoadAndRun() ;
+
+            };
+        </script>
+    </head>
+ 
+	<body>
+		<center>
+		<A HREF="cv.htm">download CV</A> or see <A HREF="/f/?id=internaltop">  Flash Demo (11.4) - HW Enabled</A>
+		</center>
+		<div id="c1">
+        <canvas id="canvasBuffer1" width="1024" height="640"></canvas>
+		</div>
+		<center>
+		<A HREF="cv.htm">download CV</A> or see <A HREF="/f/?id=internalbottom"> Flash Demo (11.4) - HW Enabled</A>
+		</center>
+
+    </body>
+
+	
+	<script type="text/javascript">
+
+	var mousex =	0 ;
+	var mousey =	0 ;
+	
+	
+	function KeyBoardHandlerSetup(filterset,bndings)
+	{
+		var	buffer			=   new Array() ;
+		var	keyState		=	new Array() ;
+		var	kevent			= 	"" ;
+		var	bindings		=	{} ;
+		
+			
+		return {
+				 
+				bindKey: 		function(realKey,keyID)
+									{
+										
+										if (!bindings[keyID]){
+											bindings[keyID] = new Array() ;
+										}
+										bindings[keyID].push(realKey) ;
+									},
+				_wasJustPressed:	function(realKey)
+								{
+									var state = keyState[realKey] ;
+									keyState[realKey] = null
+									return state ; 
+								},
+
+				isPressed: 		function(keyID)
+								{
+									return this.isPressedKeyID(keyID) ; // || this._isPressed(keyID) ;
+								},
+
+				isPressedKeyID:	function(keyID)
+							{
+								var realKeys	=	bindings[keyID] ;
+								for (var bnd in realKeys) 
+								{
+									
+									var realKey = realKeys[bnd] ;
+									if (this._isPressed(realKey))
+									{
+										return true ;
+									}	
+								}
+								return false ;
+							},
+
+				_isPressed:	function(realKey)
+							{
+								var state = keyState[realKey] ;
+								return state && state == 'keydown' ;	
+							},
+
+				getLastEvent:
+							function()
+							{
+								return kevent ;
+							},
+				handler:	function(evt) 
+							{ 
+								var realKey			=	evt.keyCode;
+								var type			=	evt.type;
+								kevent 				=	"KEY "+realKey+" TYPE "+type ;
+								keyState[realKey]	=	type ;
+							}
+
+			}
+	}
+
+	// define game callback
+	var setMouseValues = function(evt)
+	{
+		mousex = evt.clientX
+		mousey = evt.clientY
+		return true ;
+	}
+
+
+</script>
+<script type="text/javascript" src="source/main/ExampleLevelData.js"></script>
+<script type="text/javascript" src="source/main/EnemyData.js"></script>
+<script type="text/javascript" src="source/main/intro.js"></script>
+<script type="text/javascript" src="source/main/game1.js"></script>
+<script type="text/javascript" src="source/main/game2.js"></script>
+<script type="text/javascript" src="source/main/game3.js"></script>
+<script type="text/javascript" src="source/main/game4.js"></script>
+</html>
+

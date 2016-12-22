@@ -1,0 +1,84 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if not Event  then
+
+Event = { }
+Event.className="Event" 
+
+Event.STATE_WAITING = 0 
+Event.STATE_RUNNING = 1 
+Event.STATE_FINISHED = 2 
+
+
+	function Event.Create(startTime,endTime,eventObj,eventParam)
+		--Logger.print("Event.Create()") 
+		local event = {
+	              state		=	Event.STATE_WAITING,
+				  runtime 	= 	0,
+				  starttime =	startTime,
+				  duration	=	endTime-startTime,
+				  eventObj	=	eventObj,
+				  eventParam= 	eventParam,
+				  className	=	Event.className,
+		}
+		setmetatable(event, { __index = Event })
+		return event 
+	end
+
+
+	function Event.StartEvent(event)
+		--Logger.print("Event:StartEvent")
+		event.eventObj:StartEvent() 
+	end	
+
+
+	function Event.Running(event)
+		--Logger.print("Event:Running() runtime/duration = ",event.runtime,event.duration)
+		local nTime = event.runtime/event.duration 
+		event.eventObj:Running(nTime) 
+	end
+	
+	function Event.EndEvent(event)
+		--Logger.print("Event:EndEvent()")
+		event.eventObj:EndEvent() 
+	end	
+
+	function Event.IsFinished(event) 
+		return (event.state == Event.STATE_FINISHED) 
+	end
+
+	function Event.Debug(event) 
+		Logger.print("Event Debug() ",event.starttime,event.duration,event.runtime,event.state)
+	end
+	
+	
+	function Event.Update(event,ctime,dt)
+			--Logger.print("Event:Update()",ctime,dt,event.state)
+			local state = event.state 
+
+			if (state == Event.STATE_WAITING) then
+				if (ctime >= event.starttime) then
+					event.runtime = 0.0 
+					Event.StartEvent(event) 
+					if (event.duration == 0) then
+						event.state = Event.STATE_FINISHED 
+					else
+						event.state = Event.STATE_RUNNING 
+					end
+				end
+
+			elseif (state == Event.STATE_RUNNING) then
+				event.runtime = event.runtime + dt
+				if (event.runtime <= event.duration) then
+					Event.Running(event) 
+				else 
+					Event.EndEvent(event) 
+					event.state = Event.STATE_FINISHED 
+				end
+			end
+			
+	end
+
+	Logger.print("Included Event")
+	
+end
+

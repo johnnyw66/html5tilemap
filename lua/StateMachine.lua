@@ -1,0 +1,287 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if not FStateMachine then
+------------------------------------------------------------
+-- FStateMachine.lua
+-- The state machine class
+-- Simples...
+--
+-- AddState(name) -> adds a new state
+--  OnEntry(name, func) -> function to call when entering the named state
+--  OnExit(name, func) -> function to call when exiting the named state
+--  OnUpdate(name, func) -> function call every frame whilse in the named state
+-- AddTransition(source, dest, func) -> when in source state, if func is true then move to state dest 
+------------------------------------------------------------
+local vmDbg = {
+
+		print = function (me,...)
+			local args	=	{...}	
+			local frm	=	args[1]
+			table.remove(args,1)
+			local str = string.format(frm,unpack(args))
+		--	Logger.lprint(str)
+		end
+}
+
+FStateMachine = {}
+FStateMachine.className	=	'FStateMachine'
+------------------------------------------------------------
+-- FStateMachine Constructor
+------------------------------------------------------------
+function FStateMachine.Create(obj)
+    local fstatemachine = {
+        states = {},
+        on_entry = {},
+        on_exit = {},
+        on_update = {},
+        sys_calls = {},
+		time	  = 0,
+        current_state = false,
+        current_call = false,
+		object		=	obj,
+		className	= FStateMachine.className,
+    }
+    return setmetatable(fstatemachine, {__index=FStateMachine})    
+end
+
+-- Add some concept of time to state machine.
+-- Poor design?
+
+function FStateMachine.GetStateDuration(fstatemachine)
+    return fstatemachine.time
+end
+
+
+
+function FStateMachine.GetCurrentState(fstatemachine)
+    return fstatemachine.current_state
+end
+
+function FStateMachine.SetObject(fstatemachine,object)
+   fstatemachine.object = object
+end
+
+------------------------------------------------------------
+-- AddState
+-- @param name : the state name, which must be unique
+--               within an FStateMachine.
+------------------------------------------------------------
+function FStateMachine.AddState(fstatemachine, name)
+    fstatemachine.states[name] = {}
+    return state
+end
+
+------------------------------------------------------------
+-- AddTransition
+-- @param source : the state to test in
+-- @param dest : the state to jump to
+-- @param transition : the test function, the
+--          transition takes place if this func
+--          returns true.
+------------------------------------------------------------
+function FStateMachine.AddTransition(fstatemachine, source, dest, transition)
+    assert(fstatemachine.states[source], "FSM: no source")
+    assert(fstatemachine.states[dest], "FSM: no dest")
+    local state = fstatemachine.states[source]
+    state[transition] = dest
+end
+
+------------------------------------------------------------
+-- SetState
+-- @param name : set the initial state
+------------------------------------------------------------
+function FStateMachine.SetState(fstatemachine,name)
+    local s =fstatemachine.states[name]
+    assert(s,"no state:"..fstatemachine.className..","..(name or nil))
+    fstatemachine.current_state = name
+	fstatemachine.time		   = 0
+	local f = fstatemachine.on_entry[name]
+    if f then
+        f(fstatemachine.object,fstatemachine.time)
+		fstatemachine.time	=	0
+    end
+end
+
+
+function FStateMachine.ResetTime(fstatemachine)
+	FStateMachine.SetTime(fstatemachine,0)
+end
+
+function FStateMachine.SetTime(fstatemachine,nTime)
+	fstatemachine.time 	=	nTime
+end
+
+
+------------------------------------------------------------
+-- Update
+-- Update the entire state machine
+------------------------------------------------------------
+function FStateMachine.Update(fstatemachine,dt)
+
+    assert(fstatemachine.current_state, "No initial state has been set")
+
+    local current  = fstatemachine.current_state
+    fstatemachine.time	   = fstatemachine.time + (dt or 0)
+    
+    -- update loop for the current state
+    do
+        local f = fstatemachine.on_update[current]
+        if f then
+            f(fstatemachine.object,fstatemachine.time,dt)
+        end
+    end
+    
+    local state = fstatemachine.states[current]
+    for transition, dest in pairs(state) do
+    
+        if transition(fstatemachine.object,fstatemachine.time) then
+                
+            -- exit
+            do
+                local f = fstatemachine.on_exit[current]
+                vmDbg:print("<<", current, " : Exit")
+                if f then
+                    f(fstatemachine.object,fstatemachine.time) 
+                end
+            end
+        
+            fstatemachine.current_state = dest
+            
+            -- entry
+            do
+            
+                local f = fstatemachine.on_entry[dest]
+                vmDbg:print(">>", dest, " : Enter")
+                if f then
+                    f(fstatemachine.object,fstatemachine.time)
+					fstatemachine.time	=	0
+                end
+            end
+            
+            -- no more transitions are checked from here on
+            break
+        end
+    
+    end
+    
+end
+
+------------------------------------------------------------
+-- Handles system calls
+------------------------------------------------------------
+function FStateMachine.OnSystemCall(fstatemachine, name, callback, func)
+    assert(fstatemachine.states[name])
+    -- create a table if needed
+    if not fstatemachine.sys_calls[name] then
+        fstatemachine.sys_calls[name] = {}
+    end
+    
+    fstatemachine.sys_calls[name][callback] = func
+    
+end
+
+------------------------------------------------------------
+-- Calls can be forwarded on from the system, and the
+-- state machine can choose to answer these calls
+------------------------------------------------------------
+function FStateMachine.SystemCall(fstatemachine, callback_name, ...)
+    vmDbg:print("FStateMachine.SystemCall", callback_name)
+    local callback_table = fstatemachine.sys_calls[fstatemachine.current_state]
+    vmDbg:print(callback_table)
+    if  callback_table then
+        local func = callback_table[callback_name]
+        vmDbg:print(func)
+        if func then
+            func(...)
+        end
+    end
+end
+
+------------------------------------------------------------
+-- OnEntry
+-- when entering state [name], [func] is called
+------------------------------------------------------------
+function FStateMachine.OnEntry(fstatemachine, name, func)
+    fstatemachine.on_entry[name] = func
+end
+
+------------------------------------------------------------
+-- OnExit
+-- when exiting state [name], [func] is called
+------------------------------------------------------------
+function FStateMachine.OnExit(fstatemachine, name, func)
+    fstatemachine.on_exit[name] = func
+end
+
+------------------------------------------------------------
+-- OnUpdate
+-- when in state [name], [func] is called (every frame
+------------------------------------------------------------
+function FStateMachine.OnUpdate(fstatemachine, name, func)
+    fstatemachine.on_update[name] = func
+end
+
+------------------------------------------------------------
+-- Initialise
+-- Add several states and transitions from one handy
+-- location.  Can be called several times with extra data.
+--
+-- states = {
+--          state1 = { on_entry = func1, on_exit = func2, on_update = func3 },
+--          state2 = { on_entry = func4, on_exit = func5 },
+--          state3 = { on_update = func6 } }
+--
+-- transitions = {
+--          state1 = { transitions = {
+--              {"state2", test1},
+--              {"state3", test2} } },
+--
+--          state2 = { transitions = {
+--              {"state3", test2} } },
+--
+--          state2 = { transitions = {
+--              {"state1", test3} } },
+--
+-- FStateMachine.Initialise( fsm, states )
+-- FStateMachine.Initialise( fsm, transitions )
+------------------------------------------------------------
+function FStateMachine.Initialise(fstatemachine, t)
+    vmDbg:print( "Adding states...")
+    for state_name, state in pairs(t) do
+        vmDbg:print(state_name)
+        FStateMachine.AddState(fstatemachine,state_name)
+
+        if state.on_entry then  FStateMachine.OnEntry(fstatemachine,state_name, state.on_entry)    end
+        if state.on_exit then   FStateMachine.OnExit(fstatemachine,state_name, state.on_exit)      end
+        if state.on_update then FStateMachine.OnUpdate(fstatemachine,state_name, state.on_update)  end
+        
+        if state.on_system then
+            print "  System Callbacks"
+            for name, func in pairs(state.on_system) do
+                vmDbg:print("    ", name)
+                FStateMachine.OnSystemCall(fstatemachine,state_name, name, func)
+            end
+        end
+        
+    end
+    
+    -- now add transitions
+    vmDbg:print("Adding transitions...")
+    for state_name, state in pairs(t) do
+        if not state.transitions then
+            vmDbg:print("    no transitions from state "..state_name)
+        else
+            for i, transition in ipairs(state.transitions) do
+                vmDbg:print(string.format("    from %s to %s",state_name, transition[1]))
+                FStateMachine.AddTransition(fstatemachine,state_name, transition[1], transition[2])
+            end
+        end
+    end
+    
+end
+
+
+end
+
+
+
+

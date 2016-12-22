@@ -1,0 +1,771 @@
+-- Copyright 2012, John Wilson, Brighton Sussex UK. Licensed under the BSD License. See licence.txt
+if (not PlayerHelicopter) then
+PlayerHelicopter				=	{}
+PlayerHelicopter.className	=	"Player"
+
+PlayerHelicopter.STEPX		=	8
+PlayerHelicopter.STEPY		=	8
+
+PlayerHelicopter.STATE_ALIVE	=	0
+
+local kENEMY_MAXTURNANGLE			=	180.0
+local kENEMY_ANGULAR_ACCELERATION	=	180.0
+local FULLSTRENGTH					=	255
+
+local BULLETDEBOUNCE				=	0.5
+local MISSILEDEBOUNCE				=	2
+local INDESTRUCTIBLE_DURATION		=	30
+local RAPIDFIRE_DURATION			=	30
+
+local rad			=	math.rad
+local deg			=	math.deg
+local sin			=	math.sin
+local cos			=	math.cos
+
+local scalearound	=	0.95
+local sunangle		=	22
+
+	local function causeEvent(player,event)
+		if (player.eventMgr) then
+			player.eventMgr(event,player)
+		end
+	end
+	
+	function PlayerHelicopter.Create(eventMgr,properties,name,tilemap,x,y,direction,kx,ky)
+		Logger.lprint("PlayerHelicopter.Create")
+	
+		local player = {
+				eventMgr			=	eventMgr,
+				id					=	1,
+				x 					=	x or 0,
+				y					=	y or 0,
+				z					=	0,
+				radius				=	16,
+				state 				=	PlayerHelicopter.STATE_ALIVE,	
+				direction			=	direction,
+				blade				=	0,
+				wanteddirection		=	direction,
+				bodySprite			=	nil,
+				bladeSprite			=	nil,
+				currentAngularSpeed = 0.0,
+				currentAngularDir   = true,
+				hoverFreq			=	0.25,
+				velx				=	0,
+				vely				=	0,
+				analhor				=	0,
+				analvert			=	0,
+				time				=	0,
+				moving				=	false,
+				lastbulletshot		=	0,
+				lastmissileshot		=	0,
+				chaff				=	4,
+				tilemap				=	tilemap,
+				mapDim				=	TileMap.GetMapDimensions(tilemap),
+				alive				=	true,
+				strength			=	FULLSTRENGTH,
+				bulletdamage		=	80,	
+				missiledamage		=	100,
+				bulletdebounce		=	BULLETDEBOUNCE,
+				homingmissiles		=	4,
+				parts				=	{},
+				lives				=	3,
+				damagemultiplier	=	1,
+				rapidfire			=	false,
+				debug				=	false,
+				properties			=	properties,
+				subtype				=	'flying',
+				className	=	PlayerHelicopter.className,
+		}
+
+		setmetatable(player, { __index = PlayerHelicopter }) 
+		PlayerHelicopter.Init(player)
+		causeEvent(player,"PlayerCreated")
+		return player 
+
+	end
+	
+	function PlayerHelicopter.GetGameData(player)
+		return {lives=player.lives,homingmissiles = player.homingmissiles,chaff = player.chaff}
+	end
+
+	function PlayerHelicopter.RestoreGameData(player,data)
+		player.lives			=	data.lives	or 3
+		player.chaff			=	data.chaff	or 4
+		player.homingmissiles	=	data.homingmissiles	or 4
+	end
+	
+	function PlayerHelicopter.Respawn(player)
+		player.alive		=	true
+		player.strength		=	FULLSTRENGTH
+		causeEvent(player,"AlivePlayerHelicopter")
+		
+	end
+
+	function PlayerHelicopter.GetChaff(player)
+		return player.chaff	
+	end
+	
+	function PlayerHelicopter.GetLives(player)
+		return player.lives	
+	end
+
+	function PlayerHelicopter.IncrementLives(player)
+		player.lives	=	player.lives + 1
+	end
+
+	function PlayerHelicopter.DecrementLives(player)
+		if player.lives > 0 then
+			player.lives	=	player.lives - 1
+		end
+	end
+	
+	function PlayerHelicopter.GetFiringOffset(player)
+		return {ox = 0, oy = 0, oz = 0}
+	end
+
+	function PlayerHelicopter.GetPosition(player)
+		return	player.x,player.y,player.z
+	end
+
+	function PlayerHelicopter.GetVectorPosition(player)
+		return	Vector4.Create(player.x,player.y,player.z)
+	end
+	
+	function PlayerHelicopter.GetX(player)
+		return player.x 
+	end
+	
+	function PlayerHelicopter.GetY(player)
+		return player.y 
+	end
+	
+	function PlayerHelicopter.GetZ(player)
+		return player.z
+	end
+	
+	function PlayerHelicopter.GetMissileDirection(player)
+		return player.direction
+	end
+	
+	function PlayerHelicopter.GetDirection(player)
+		return player.direction 
+	end
+
+	function PlayerHelicopter.GetDirectionPair(player,size)
+		local v =  PlayerHelicopter._MakeDirectionVector(player.direction,size)
+		return v:X(),v:Y()
+	end
+	
+	function PlayerHelicopter.GetState(player)
+	   	return player.state
+	end
+	
+	function PlayerHelicopter.IsAlive(player)
+		return player.alive
+	end
+	
+	function PlayerHelicopter.ApplyDamage(player,damage)
+		local ddamage	=	(damage or 0)*(@PLAYERINDESTRUCTIBLE@ and 0 or player.damagemultiplier)
+		player.strength 	= 	math.max(0,player.strength - ddamage)
+		if (player.strength <= 0 and player:IsAlive()) then
+			player:Kill(true)
+			player:DecrementLives()
+		end
+	end
+
+	function PlayerHelicopter.Finish(player)
+		causeEvent(player,"FinishPlayerHelicopter")
+	end
+	
+	function PlayerHelicopter.Kill(player,explode)
+		player.alive	=	false
+		causeEvent(player,"KillPlayerHelicopter")
+		
+		if (explode) then
+			local xpos,ypos,zpos	=	player:GetPosition()
+			for _,part in pairs(player.parts) do
+				local explosions = part:GetExplosions()
+				if (explosions) then
+					for _,explode in pairs(explosions) do
+						ExplosionManager.AddExplosion({x = xpos + (explode.x or 0), y = ypos + (explode.y or 0), z = zpos})
+					end
+				end
+			end
+			ExplosionManager.AddExplosion({x = xpos , y = ypos , z = zpos})
+		end
+		
+	end
+	
+
+	
+	
+	
+	function PlayerHelicopter.Init(player)
+		local 	properties			=	player.properties
+		assert(properties,'PLAYER MUST HAVE PROPERTIES DEFINED')
+		player.radius				=	properties.radius or player.radius
+		player.scale				=	properties.scale or 1
+		player.damagemultiplier		=	properties.damagemultiplier or (1-math.min(1,math.max(0,(properties.shield or 0))))
+		player.odamagemultiplier	=	player.damagemultiplier 
+		player.bulletdamage			=	properties.bulletdamage or player.bulletdamage
+		player.bulletduration		=	(properties.bulletduration or 1) 
+		player.bulletvelocity		=	(properties.bulletvelocity or 400) 
+		
+		player.missiledamage		=	properties.missiledamage or player.missiledamage
+		player.bulletdebounce		=	(properties.firerate and 1/properties.firerate) or  BULLETDEBOUNCE
+		player.obulletdebounce		=	player.bulletdebounce
+		player.missiledebounce		=	(properties.missilerate and 1/properties.missilerate) or  MISSILEDEBOUNCE
+
+
+		
+		player.radsq		=	player.radius*player.radius
+	
+		player.bodySprite = Sprite.Create()
+		player.bladeSprite = Sprite.Create()
+		player.shadowSprite = Sprite.Create()
+		player.crossHairSprite = Sprite.Create()
+
+
+
+		local texture = Texture.Find(Constants.PLAYERSHIPID)
+		Sprite.SetTexture(player.bodySprite,texture)
+
+		local texture = Texture.Find("helibody")
+		Sprite.SetTexture(player.bladeSprite,texture)
+
+		local texture = Texture.Find("helishadow")
+		Sprite.SetTexture(player.shadowSprite,texture)
+
+		local texture = Texture.Find("crosshair")
+		Sprite.SetTexture(player.crossHairSprite,texture)
+
+
+		local plywidth	=	texture:GetWidth() 
+		local plyheight	=	texture:GetHeight() 
+		
+		player.minx	=	plywidth/2
+		player.miny	=	plyheight/2
+
+		player.maxx	=	player.mapDim:X() - plywidth/2
+		player.maxy	=	player.mapDim:Y() - plyheight/2
+		player.targetbearing	=	player.direction 
+		player.lastx			=	0
+		player.lasty 			=	0
+		player.freeze_effect	=	1			-- 0 means freeze player
+		player.scale			=	1
+		
+		--player.alive			=	true
+		--player.strength			=	FULLSTRENGTH
+		
+		PlayerHelicopter.Respawn(player)
+
+		
+	end
+
+	function PlayerHelicopter.Indestructible(player,indesvalue)
+		player.damagemultiplier	=	indesvalue or 0
+	end
+
+	function PlayerHelicopter.Destructible(player)
+		player.damagemultiplier	=	player.odamagemultiplier
+	end
+	
+	
+	function PlayerHelicopter.ShowPlayerShieldIcon(player)
+		return Util.ShowIcon(player.time,player.startshield,INDESTRUCTIBLE_DURATION)
+	end
+
+	function PlayerHelicopter.ShowPlayerRapidFireIcon(player)
+		return Util.ShowIcon(player.time,player.startrapid,RAPIDFIRE_DURATION)
+	end
+	
+	function PlayerHelicopter.CollectPickup(player,pickupType)
+		Logger.lprint('PlayerHelicopter.CollectPickup:'..(pickupType or 'unknown'))
+		if (pickupType == 'extralife') then
+			player:IncrementLives()
+		elseif(pickupType == 'chaff') then
+			player.chaff = player.chaff + 1
+		elseif(pickupType == 'timeshift' or pickupType == 'extratime') then
+			causeEvent(player,"TimeShift")
+		elseif(pickupType == 'powerup') then
+			player.strength = FULLSTRENGTH
+		elseif(pickupType == 'partialdamage') or (pickupType == 'indestructible') then
+				local mf	=	pickupType == 'indestructible' and 0 or 0.125
+				player:Indestructible(mf)
+				player.startshield	=	player.time
+				EventManager.AddSingleShotEvent(
+					function(player)
+						-- Ignore any events which have been overridden by gathering new pickups
+						-- The 0.5 is here because of small (Game DeltaTime) discrepancies between EventManager Times
+						-- and Player updates
+						if (player.time - player.startshield >= INDESTRUCTIBLE_DURATION - 0.5) then
+							player:Destructible()
+						end
+					end,
+				player,INDESTRUCTIBLE_DURATION)
+
+		elseif(pickupType == 'homingmissile') then
+			player.homingmissiles	=	player.homingmissiles + 1
+		elseif(pickupType == 'rapidfire') then
+
+			player.bulletdebounce	=	player.obulletdebounce/2
+			player.rapidfire		=	true
+			player.startrapid		=	player.time
+			EventManager.AddSingleShotEvent(
+				function(player)
+					-- Ignore any events which have been overridden by gathering new pickups
+					-- The 0.5 is here because of small (Game DeltaTime) discrepancies between EventManager Times
+					-- and Player updates
+					if (player.time - player.startrapid >= RAPIDFIRE_DURATION - 0.5) then
+						player.bulletdebounce	=	player.obulletdebounce
+						player.rapidfire		=	false
+					end
+				end,
+				player,RAPIDFIRE_DURATION)
+		end
+		
+		
+	end
+	
+	function PlayerHelicopter.HasMoved(player)
+		return (player.lastx ~= player.x or player.lasty ~= player.y)
+	end
+	
+	-- Brakes On - used for end of game sequence..
+
+	function PlayerHelicopter.BrakesOn(player)
+		player.velx	=	0
+		player.vely	=	0
+		player.freeze_effect	=	0
+	end
+
+	
+	function PlayerHelicopter.Update(player,dt)
+		sunangle	=	sunangle + dt*0.01
+		
+		if (not player:IsAlive()) then
+			return
+		end
+		
+		local isMoving = PlayerHelicopter.HasMoved(player)
+		if (player.follow) then
+			Orbitor._Update(player,dt)
+		else
+			player.time = player.time + dt  
+			player.blade = player.blade + dt*(isMoving and 520 or 360)
+		end
+		
+		if (isMoving) then
+				local wantedDirection = PlayerHelicopter._CalcDirection(player)
+				--player.targetbearing		= player.direction -- (player.dontturn and player.direction) or wantedDirection
+				player.scale				=	1
+		else
+			player.scale		=	scalearound + (1-scalearound)*sin(6*player.hoverFreq*player.time)
+		end
+		
+		player:Accelerate(dt)	
+		player:Restrict()
+
+		PlayerHelicopter.Turn(player,dt)
+		PlayerHelicopter.LockCrossHair(player)
+
+	end
+	
+	function PlayerHelicopter._MakeDirectionVector(angle,size)
+		local rsize	=	size or 1
+		local ny= -rsize*sin(rad(angle + 90))
+		local nx= -rsize*cos(rad(angle + 90))
+		return Vector4.Create(nx,ny)
+	end
+
+	function PlayerHelicopter._MakeDirectionVectorPair(angle,xpos,ypos,size)
+		local rsize	=	size or 1
+		local ny= -rsize*sin(rad(angle + 90))
+		local nx= -rsize*cos(rad(angle + 90))
+		return xpos+nx,ypos+ny
+	end
+
+	function PlayerHelicopter._CalcDirection(player)
+
+		-- Look in the direction we are moving
+		local xpos,ypos,_ = PlayerHelicopter.GetPosition(player)
+
+		local dx = xpos - (player.lastx or 0)
+		local dy = ypos - (player.lasty or 0)
+
+		local th = math.atan2(dy,dx)  
+
+ 		player.lastx	=	xpos
+		player.lasty	=	ypos
+		return deg(th) + 90
+	end	
+	
+	function PlayerHelicopter.CalcScreenStuff(player)
+	--	player.x / totalMapWidth
+	--	player.y / totalMapHeight
+	end
+	
+	
+
+	function PlayerHelicopter.Restrict(player)
+		if (player.x < player.minx) then
+			player.x = player.minx
+		end
+	
+		if (player.x > player.maxx) then
+			player.x = player.maxx
+		end
+	
+		if (player.y < player.miny) then
+			player.y	=	player.miny
+		end
+		if (player.y > player.maxy) then
+			player.y	= player.maxy
+		end
+	
+	end
+	
+	
+	function PlayerHelicopter.PlayerUp(player)
+		player.analvert	=	-1
+	end
+	
+	function PlayerHelicopter.PlayerDown(player)
+		player.analvert	=	1
+	end
+	
+	function PlayerHelicopter.PlayerLeft(player)
+		player.analhor	=	-1
+	end
+
+
+	function PlayerHelicopter.PlayerRight(player)
+		player.analhor	=	1
+	end
+
+
+	function PlayerHelicopter.PlayerSelect(player)
+		player:BulletSelect(player)
+	end
+	
+	function PlayerHelicopter.BulletSelect(player)
+	
+		if (not player.lastbulletshot or player.time > player.lastbulletshot  + player.bulletdebounce) then
+
+			local pos			=	Vector2.Create(player.x,player.y)
+			local bulletdamage	=	player.bulletdamage
+			local bulletvelocity	=	player.bulletvelocity
+			local bulletduration	=	player.bulletduration
+			
+			BulletManager.Fire(player,bulletdamage,player.x,player.y,bulletvelocity,player.direction,bulletduration,nil,1)
+			
+				EventManager.AddSingleShotEvent(
+				function(par)
+					BulletManager.Fire(player,bulletdamage,player.x+10,player.y+10,bulletvelocity,player.direction,bulletduration,nil,1)
+					BulletManager.Fire(player,bulletdamage,player.x-10,player.y-10,bulletvelocity,player.direction,bulletduration,nil,1)
+					
+				end,
+				nil,0.25)
+			player.lastbulletshot	=	player.time
+		end
+	end
+
+
+
+	local function fireMissile(player)
+		local MISSILEDAMAGE		=	player.missiledamage
+		local pos			=		Vector2.Create(player.x,player.y)
+	
+		if (MissileManager.AddMissile( player, pos, MISSILEDAMAGE,  true)) then
+		
+			EventManager.AddSingleShotEvent(
+					function(par)
+						MissileManager.AddMissile( player, pos, MISSILEDAMAGE,  false)
+					end,
+					nil,0.25)
+			
+			player.lastmissileshot	=	player.time
+			return true
+		else
+			return false
+		end
+		
+	end
+
+	local function fireHMissile(player,target)
+		local MISSILEDAMAGE		=	player.missiledamage*4.5
+		local pos				=	Vector4.Create(player.x,player.y)
+	
+		if (MissileManager.AddHMissile( player, pos, MISSILEDAMAGE,0,15,target)) then
+			player.lastmissileshot	=	player.time
+			return true
+		else
+			return false
+		end
+	end
+
+	function PlayerHelicopter.GetLocked(player)
+		return (player.homingmissiles > 0) and player.ontarget
+	end
+
+	function PlayerHelicopter.GetNumberOfHomingMissiles(player)
+		return player.homingmissiles
+	end
+	
+	function PlayerHelicopter.XXLockCrossHairXXXX(player)
+
+		player.chfreq	=	0.25
+	
+		if (player.homingmissiles <= 0) then
+			return 
+		end
+	
+		local xhair,yhair	=	PlayerHelicopter._MakeDirectionVectorPair(player.direction,player.x,player.y,Missile.MISSILE_LEN)
+	
+		local yocals = EnemyManager.GetLocalEnemies()
+		
+		for _,enemy in pairs(yocals) do
+			if (not enemy.dormant and Enemy.IsColliding(enemy,xhair,yhair,10) and enemy ~= player.ontarget) then
+				player.chfreq	=	2.25
+				player.ontarget	=	enemy
+				return
+			end
+		end
+		
+	end
+	
+	function PlayerHelicopter.LockCrossHair(player)
+		EnemyManager.LockCrossHair(Missile.MISSILE_LEN)
+	end
+	
+	function PlayerHelicopter.UnLockCrossHair(player)
+		EnemyManager.UnLockTarget()
+	end
+	
+	-- Helicopters have homing missiles
+	
+	function PlayerHelicopter.MissileSelect(player)
+	
+		if (not player.lastmissileshot or player.time > player.lastmissileshot  + player.missiledebounce) then
+
+			if (player.homingmissiles > 0 and player.ontarget and not player.ontarget.dormant) then
+				if (fireHMissile(player,player.ontarget)) then
+					player.homingmissiles	=	player.homingmissiles - 1
+					PlayerHelicopter.UnLockCrossHair(player)
+				end
+			else
+				fireMissile(player)
+			end
+		end
+		
+	end
+	
+
+
+	function PlayerHelicopter.ChaffSelect(player)
+		if (player.chaff > 0) then
+			player.chaff = player.chaff - 1
+	 		for i = 1, 5	do
+				EventManager.AddSingleShotEvent(
+				function()
+					local x,y = player:GetPosition()
+					for z = 1, 5 do
+					EventManager.AddSingleShotEvent(
+						function()	
+		 					local direction = 	player.direction + math.random(0,90) - 45 + 180
+		 					local velx		=	96*math.sin(math.rad(direction)) 	
+		 					local vely		=	-96*math.cos(math.rad(direction)) 
+	 						local prt 		=	ParticleManager.AddChaff(x,y,velx,vely,math.random(2,3) + 3)
+							MissileManager.Tease(prt)
+						end,
+					nil,
+					z*0.125*0.5)		
+					end
+				end,
+				nil,
+				i*0.25
+				)
+	 		end
+		end
+	end
+	
+	
+	function PlayerHelicopter.Turn(player,dt)
+
+
+		player.angdistance = ((player.targetbearing - (player.direction % 360)))
+
+		player.leftangdist = ((360-player.targetbearing)	+ (player.direction % 360)) % 360
+		player.rightangdist = ((player.targetbearing + (360-(player.direction % 360)))) % 360
+		
+
+		local	clockwiseDirection	=	(player.rightangdist < player.leftangdist) 
+		
+		
+		if ( clockwiseDirection ~= player.currentAngularDir ) then
+			player.currentAngularDir = clockwiseDirection
+			player.currentAngularSpeed = 0.0
+		end
+
+		player.currentAngularSpeed = player.currentAngularSpeed +(dt * kENEMY_ANGULAR_ACCELERATION)
+
+		if ( player.currentAngularSpeed > kENEMY_MAXTURNANGLE ) then
+			player.currentAngularSpeed = kENEMY_MAXTURNANGLE
+		end
+		
+		local maxTurnAngle = player.currentAngularSpeed * dt
+		
+		if(math.min(player.rightangdist,player.leftangdist)>maxTurnAngle) then
+		
+			if (clockwiseDirection) then
+				player.direction = (player.direction + maxTurnAngle) % 360
+
+			else
+				-- go anti clockwise
+				player.direction = (player.direction - maxTurnAngle) % 360
+			end
+
+		else
+			player.direction = player.targetbearing
+		end
+	end
+	
+	
+	
+	function PlayerHelicopter.Render(player,renderHelper,x,y)
+		if (player:IsAlive()) then
+			PlayerHelicopter.RenderShadow(player,renderHelper,x,y)
+			PlayerHelicopter.RenderBody(player,renderHelper,x,y)
+		end
+	end
+
+
+	function PlayerHelicopter.RenderShadow(player,renderHelper,x,y)
+			local xpos,ypos	=	player.x,player.y
+			local extra		=	scalearound - player.scale
+			local shadowoffx,shadowoffy	=	PlayerHelicopter._MakeDirectionVectorPair(180+player.direction+sunangle,xpos,ypos,40)
+			RenderHelper.DrawSprite(renderHelper,player.shadowSprite,shadowoffx,shadowoffy,0.85*(1 + extra),-(player.direction or 0))
+	end
+	
+	function PlayerHelicopter.RenderBody(player,renderHelper,x,y)
+	
+		-- Logger.lprint("PlayerHelicopter.Render")
+
+		local xpos,ypos	=	(x or player.x),(y or player.y)
+
+--		RenderHelper.DrawCircle(renderHelper,xpos,ypos, player.radius,{255, 0, 0, 128})
+
+		RenderHelper.DrawSprite(renderHelper,player.bladeSprite,xpos,ypos,player.scale,-(player.direction or 0))
+		RenderHelper.DrawSprite(renderHelper,player.bodySprite,xpos,ypos,player.scale,-(player.direction or 0)+player.blade)
+--		RenderHelper.DrawText(renderHelper,string.format("REGION = %02d, x,y = %.2f,%.2f",(player:GetRegion() or -1),xpos,ypos),xpos,ypos)
+--		Heart.PlotPlayer(renderHelper,player,WorldClock.GetClock())
+
+		PlayerHelicopter.RenderCrossHair(player,renderHelper)
+		PlayerHelicopter.RenderStrength(player,renderHelper)
+		Hud.DrawDirection(renderHelper)
+	end
+	
+	
+	
+	function PlayerHelicopter.RenderCrossHair(player,renderHelper)
+		local xpos,ypos		=	player.x,player.y
+		local	amp			=	sin(6*player.time*(player.chfreq or 0.25))
+		local xhair,yhair	=	PlayerHelicopter._MakeDirectionVectorPair(player.direction,xpos,ypos,Missile.MISSILE_LEN)
+		RenderHelper.DrawSprite(renderHelper,player.crossHairSprite,xhair,yhair,0.75*amp,-(player.direction or 0))
+	end
+
+	function PlayerHelicopter.RenderStrength(player,renderHelper)
+		local xpos,ypos		=	player.x,player.y
+		local	strfract	=	player.strength/FULLSTRENGTH
+		local   hgtfract	=	0.125
+		
+		local 	uvs	=	{
+							0,0,
+							0,hgtfract,
+							strfract,hgtfract,
+							strfract,0
+						}
+						
+		RenderHelper.DrawTextureUvs(renderHelper,"strengthbar",xpos,ypos-32,uvs)
+	end
+
+
+	-- New Accn Stuff
+	function PlayerHelicopter.Accelerate(player,dt)
+
+		local PlyAcceleration			=	1800
+		local PlyDampValue				=	8
+
+		local joyx 		= 	player:GetJoystickXAxis()
+		local joyy 		= 	player:GetJoystickYAxis()
+
+		local vx,vy	=	0,0
+		
+		local freeze_effect 	=	player.freeze_effect or 1
+		
+		vx	=	freeze_effect*(player.velx + PlyAcceleration*(joyx or 0)*dt)
+		vy	=	freeze_effect*(player.vely + PlyAcceleration*(joyy or 0)*dt)
+		
+		player.x	=	player.x + dt*vx
+		player.y	=	player.y + dt*vy
+		    
+		local damp	=   math.max(0,(1-PlyDampValue*dt))
+		player.velx	=	vx*damp
+		player.vely	=	vy*damp
+
+	end
+
+
+    function PlayerHelicopter.AngleMove(player,analx,analy)
+		local angle	=	math.deg(math.atan2(analy,analx))
+		local d		=	math.sqrt(analx*analx + analy*analy)
+		local angspeed	=	40
+		if (d > 0.5) then
+			player.targetbearing = angle + 90
+			PlayerHelicopter.BulletSelect(player)
+		end
+	--	Logger.lprint("D = "..d.." angle = "..angle) 
+		
+   	end
+  	
+	function PlayerHelicopter.AxisMove(player,analx,analy)
+		player.analhor    =	analx or 0
+		player.analvert	  =	analy or 0
+   	end
+
+  	
+	function PlayerHelicopter.GetJoystickXAxis(player)
+		local hor = player.analhor
+		player.analhor = 0
+		return hor
+	end
+
+
+	function PlayerHelicopter.GetJoystickYAxis(player)
+		local vert = player.analvert
+		player.analvert = 0
+		return vert
+	end
+	
+	
+	-- Collision
+	
+	function PlayerHelicopter.IsColliding(player,x,y,rrad)
+		local radsq	=		rrad and rrad*rrad or 0
+		local dx,dy		=		(x - player.x),(y - player.y)
+		local d			=		dx * dx + dy * dy
+--		if (d < radsq + player.radsq) then
+--			assert(false,' '..dx.." dy "..dy.." d "..d.." radsq "..radsq.." player.radsq "..player.radsq)
+--		end
+		return d < radsq + player.radsq
+	end
+	
+	function PlayerHelicopter.GetRegion(player)
+		return	EnemyManager.GetRegion(player:GetPosition())
+	end
+
+	function PlayerHelicopter.InNeighbouringRegion(player,region)
+		return EnemyManager.NeighbouringRegions(player:GetRegion(player),region)
+	end
+	
+end

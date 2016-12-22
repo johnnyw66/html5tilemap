@@ -1,0 +1,38 @@
+-- @header
+if (not SingleShotEvent)  then
+
+SingleShotEvent = { }
+SingleShotEvent.className="SingleShotEvent" 
+
+
+	function SingleShotEvent.Create(callback,param)
+		--Logger.print("SingleShotEvent.Create()") 
+
+		local singleshotevent = {
+				  callback = callback,
+        		  param = param,
+	              className=SingleShotEvent.className,
+		}
+
+		setmetatable(singleshotevent, {__index = SingleShotEvent })
+		return singleshotevent 
+	end
+
+	function SingleShotEvent.StartEvent(singleshotevent)
+		--Logger.print("SingleShotEvent:StartEvent()") 
+
+		if (singleshotevent.callback) then
+			Logger.print("SingleShotEvent:StartEvent() - Calling Single Shot Event !!!",singleshotevent.param) 
+        	singleshotevent.callback(singleshotevent.param) 
+		end
+	end
+
+	function SingleShotEvent.Running(singleshotevent,nTime)
+		Logger.warning("SingleShotEvent:Running - This should not be called!!! - See a code doctor ref: them to Event class")
+	end
+
+	function SingleShotEvent.EndEvent(singleshotevent)
+		Logger.warning("SingleShotEvent:EndEvent - This should not be called!!! - See a code doctor ref: them to Event class")
+	end
+end
+

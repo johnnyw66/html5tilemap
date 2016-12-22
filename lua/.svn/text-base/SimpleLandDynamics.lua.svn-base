@@ -1,0 +1,204 @@
+-- @header
+if not SimpleLandDynamics then
+
+SimpleLandDynamics			=	{}
+SimpleLandDynamics.className	=	'SimpleLandDynamics'
+
+local sin				=	math.sin
+local cos				=	math.cos
+local rad				=	math.rad
+local atan2				=	math.atan2
+local deg				=	math.deg
+local demoPhysics1 		= 	{maxspeed = 480, maxthrottle = 240,friction = 0.95}
+local demoPhysics2 		= 	{maxspeed = 240, maxthrottle = 60,friction = 0.75}
+
+
+local time				=	0
+
+local MAXSPEED			=	200
+local MAXTHROTTLE		=	MAXSPEED
+local FRICTION			=	0.75			-- 0 and 1
+
+
+local carSpeed			=	0
+local carHeading		=	0
+local carThrottle		=	0
+local steerAngle		=	0
+local frontWheel		=	{x = 512,y = 200}
+local backWheel			=	{x = 512,y = 360}
+local carLocation		=	{x = 512, y = 360}
+local carLength			=	32
+
+
+	
+	-- Calculate BackWheel from carHeading and 
+	-- carLength
+	local function CalcBackWheel()
+		local ly = frontWheel.y + carLength*sin(rad(180+carHeading - 90))
+		local lx = frontWheel.x + carLength*cos(rad(180+carHeading - 90))
+		backWheel.x	=	lx
+		backWheel.y	=	ly
+		carLocation.x = (frontWheel.x + backWheel.x) / 2
+		carLocation.y = (frontWheel.y + backWheel.y) / 2
+	end
+
+	local function CalcWheels(angle)
+		local	cl		=	0.5*carLength
+		local	cs		=	cos(rad(angle-90))
+		local	sn		=	sin(rad(angle-90))
+
+		frontWheel.x 		= 	carLocation.x + cl*cs
+		frontWheel.y 		= 	carLocation.y + cl*sn
+		
+		backWheel.x			=	carLocation.x + cl*cos(rad(180+angle-90))
+		backWheel.y			=	carLocation.y + cl*sin(rad(180+angle-90))
+
+	end
+
+	local function ResetCar(pos,heading)
+		carLocation		=	pos or {x = 512, y = 360}
+		carSpeed		=	0
+		carHeading		=	heading or 0
+		SimpleLandDynamics.Recalc()
+	end
+	
+	function SimpleLandDynamics.Recalc()
+		CalcWheels(carHeading)
+	end
+	
+	
+	function SimpleLandDynamics.SetPhysicsTbl(tbl)
+		SimpleLandDynamics.SetPhysics(tbl.maxspeed,tbl.maxthrottle,tbl.friction)	
+	end
+	
+	function SimpleLandDynamics.SetPhysics(maxspeed,maxthrottle,friction)
+		MAXSPEED	=	maxspeed or 240
+		MAXTHROTTLE	=	maxthrottle or MAXSPEED
+		FRICTION	=	friction or 0.75
+	--	assert(false,MAXSPEED)
+	end
+	
+	function SimpleLandDynamics.Init(pos,heading,physics)
+		ResetCar(pos,heading)
+		
+		SimpleLandDynamics.SetPhysicsTbl(physics)
+	end
+	
+
+	
+	
+	function SimpleLandDynamics.Update(dt)
+		time		=	time	+	dt
+		carSpeed	=	carSpeed + carThrottle*dt - FRICTION*carSpeed*dt
+		carSpeed 	= 	math.min(carSpeed,MAXSPEED)
+		
+		local	cs	=	cos(rad(carHeading-90))
+		local	sn	=	sin(rad(carHeading-90))
+
+		local	dx	=	carSpeed * dt * cs
+		local	dy	=	carSpeed * dt * sn
+
+		carLocation.x = carLocation.x + dx
+		carLocation.y = carLocation.y + dy
+		
+		CalcWheels(carHeading)
+
+
+	--	Logger.lprint("Car Heading "..carHeading..", Car Speed "..carSpeed)
+
+	end
+
+	-- quant3
+	-- +/-{1,0}
+	local quant3 = function(x)
+		return x < -0.5 and -1 or x > 0.5 and 1 or 0
+	end
+
+	-- quant5
+	-- +/-{1,0.5,0}
+	local quant5 = function(x)
+		return x < -0.75 and -1 or x < -0.25 and -0.5 or x < 0.25 and 0 or x < 0.75 and 0.5 or 1
+	end
+
+	-- quant32
+	-- +/-{1,0.5,0}
+	local quant32 = function(x)
+		return x < -0.75 and -1 or x < -0.25 and -0.5 or x < 0.25 and 0 or x < 0.75 and 0.5 or 1
+	end
+
+	local noquant = function(x)
+		return x
+	end
+
+	function SimpleLandDynamics.AxisMove(ax,ay)
+		local quant = noquant 
+		SimpleLandDynamics.SetThrottle(quant5(ay),quant5(ax))
+		if (carThrottle > 0) then
+			SimpleLandDynamics.Steer(quant(ax),quant(ay))
+		end
+	end
+	
+	function SimpleLandDynamics.Steer(steerx,steery)
+		local ch	=	90-math.deg(atan2( -steery, steerx))	
+		if (ch ~= carHeading) then
+			CalcWheels(ch)
+		end
+		carHeading	=	ch
+		steerAngle	=	0
+	--	Logger.lprint("Car Heading "..carHeading)
+	end
+
+	function SimpleLandDynamics.GetSteering()
+		return steerAngle
+	end
+
+	
+	function SimpleLandDynamics.SetThrottle(throttlex,throttley)
+		carThrottle	=	MAXTHROTTLE*math.sqrt(throttlex*throttlex + throttley*throttley)
+	--	Logger.lprint("carThrottle ="..carThrottle)
+		
+	end
+	
+	function SimpleLandDynamics.GetHeading()
+		return carHeading
+	end
+	
+	function SimpleLandDynamics.GetPosition()
+		return carLocation
+	end
+
+
+	function SimpleLandDynamics.SetPosition(pos)
+		carLocation	=	pos or {x = 0, y = 0}
+	end
+
+	function SimpleLandDynamics.SetHeading(angle)
+		carHeading	=	angle or 0 
+	end
+
+	function SimpleLandDynamics.SetSpeed(speed)
+		carSpeed	=	speed
+	end
+
+
+	function SimpleLandDynamics.GetSpeed()
+		return carSpeed
+	end
+
+	function SimpleLandDynamics.GetMaxSpeed()
+		return MAXSPEED
+	end
+
+
+	function SimpleLandDynamics.GetFrontWheel()
+		return frontWheel
+	end
+
+	function SimpleLandDynamics.GetBackWheel()
+		return backWheel
+	end
+
+	
+
+end
+	
