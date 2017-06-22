@@ -169,7 +169,7 @@
 								"Vector and Spline Paths",
 								"2D Render API supports multi-layer rendering",
 								"Animation, Hotspot, Trigger & Event Managers",
-								Locale.GetLocaleText("email: John Wilson junk66@talk21.com 07900495984"),
+								Locale.GetLocaleText("email: John Wilson junk66@talk21.com 07753432247"),
 
 								] ;
 
